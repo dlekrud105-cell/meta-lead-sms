@@ -9,7 +9,7 @@ VERIFY_TOKEN      = os.environ.get('META_VERIFY_TOKEN')
 META_ACCESS_TOKEN = os.environ.get('META_ACCESS_TOKEN')
 AWS_ACCESS_KEY    = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_KEY    = os.environ.get('AWS_SECRET_ACCESS_KEY')
-MY_PHONE          = os.environ.get('MY_PHONE_NUMBER')
+MY_PHONES         = [p.strip() for p in os.environ.get('MY_PHONE_NUMBER', '').split(',') if p.strip()]
 SENDER_ID         = os.environ.get('SENDER_ID', 'LEADS')
 
 @app.route('/webhook', methods=['GET'])
@@ -50,7 +50,7 @@ def format_sms(lead_data):
         lines.append(f'Form: {lead_data["ad_name"]}')
     lines.append('-' * 20)
     for field in lead_data.get('field_data', []):
-        name = field.get('name', '').replace('_', ' ').title()
+        name  = field.get('name', '').replace('_', ' ').title()
         value = field.get('values', [''])[0]
         lines.append(f'{name}: {value}')
     return '\n'.join(lines)
@@ -59,14 +59,16 @@ def send_sms(message):
     sns = boto3.client('sns', region_name='ap-southeast-2',
                        aws_access_key_id=AWS_ACCESS_KEY,
                        aws_secret_access_key=AWS_SECRET_KEY)
-    sns.publish(
-        PhoneNumber=MY_PHONE,
-        Message=message,
-        MessageAttributes={
-            'AWS.SNS.SMS.SMSType': {'DataType': 'String', 'StringValue': 'Transactional'},
-            'AWS.SNS.SMS.SenderID': {'DataType': 'String', 'StringValue': SENDER_ID}
-        }
-    )
+    for phone in MY_PHONES:
+        sns.publish(
+            PhoneNumber=phone,
+            Message=message,
+            MessageAttributes={
+                'AWS.SNS.SMS.SMSType': {'DataType': 'String', 'StringValue': 'Transactional'},
+                'AWS.SNS.SMS.SenderID': {'DataType': 'String', 'StringValue': SENDER_ID}
+            }
+        )
+        print(f"[SMS] Sent to {phone}", flush=True)
 
 @app.route('/', methods=['GET'])
 def health():
