@@ -1,4 +1,5 @@
 import os
+import json
 import boto3
 import requests
 from flask import Flask, request
@@ -70,6 +71,41 @@ def send_sms(message):
             print(f"[SMS] Sent to {phone} - MessageId: {response.get('MessageId')}", flush=True)
         except Exception as e:
             print(f"[SMS] ERROR sending to {phone}: {e}", flush=True)
+
+@app.route('/debug-sns', methods=['GET'])
+def debug_sns():
+    try:
+        sns = boto3.client('sns', region_name='ap-southeast-2',
+                           aws_access_key_id=AWS_ACCESS_KEY,
+                           aws_secret_access_key=AWS_SECRET_KEY)
+        attrs = sns.get_sms_attributes(attributes=[
+            'MonthlySpendLimit',
+            'DeliveryStatusIAMRole',
+            'DeliveryStatusSuccessSamplingRate',
+            'DefaultSenderID',
+            'DefaultSMSType',
+        ])
+        # Also check sandbox status
+        try:
+            sandbox = sns.get_sms_sandbox_account_status()
+            sandbox_enabled = sandbox.get('IsInSandbox', 'unknown')
+        except Exception as e:
+            sandbox_enabled = f'error: {e}'
+        # Check opted out numbers
+        try:
+            opted_out = sns.list_phone_numbers_opted_out()
+            opted_out_nums = opted_out.get('phoneNumbers', [])
+        except Exception as e:
+            opted_out_nums = f'error: {e}'
+        result = {
+            'sms_attributes': attrs.get('attributes', {}),
+            'sandbox_mode': sandbox_enabled,
+            'opted_out_numbers': opted_out_nums,
+            'configured_phones': MY_PHONES,
+        }
+        return json.dumps(result, indent=2), 200, {'Content-Type': 'application/json'}
+    except Exception as e:
+        return json.dumps({'error': str(e)}), 500, {'Content-Type': 'application/json'}
 
 @app.route('/', methods=['GET'])
 def health():
