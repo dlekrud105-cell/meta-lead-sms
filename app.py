@@ -10,7 +10,6 @@ META_ACCESS_TOKEN = os.environ.get('META_ACCESS_TOKEN')
 AWS_ACCESS_KEY    = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_KEY    = os.environ.get('AWS_SECRET_ACCESS_KEY')
 MY_PHONES         = [p.strip() for p in os.environ.get('MY_PHONE_NUMBER', '').split(',') if p.strip()]
-SENDER_ID         = os.environ.get('SENDER_ID', 'LEADS')
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -60,15 +59,17 @@ def send_sms(message):
                        aws_access_key_id=AWS_ACCESS_KEY,
                        aws_secret_access_key=AWS_SECRET_KEY)
     for phone in MY_PHONES:
-        sns.publish(
-            PhoneNumber=phone,
-            Message=message,
-            MessageAttributes={
-                'AWS.SNS.SMS.SMSType': {'DataType': 'String', 'StringValue': 'Transactional'},
-                'AWS.SNS.SMS.SenderID': {'DataType': 'String', 'StringValue': SENDER_ID}
-            }
-        )
-        print(f"[SMS] Sent to {phone}", flush=True)
+        try:
+            response = sns.publish(
+                PhoneNumber=phone,
+                Message=message,
+                MessageAttributes={
+                    'AWS.SNS.SMS.SMSType': {'DataType': 'String', 'StringValue': 'Transactional'},
+                }
+            )
+            print(f"[SMS] Sent to {phone} - MessageId: {response.get('MessageId')}", flush=True)
+        except Exception as e:
+            print(f"[SMS] ERROR sending to {phone}: {e}", flush=True)
 
 @app.route('/', methods=['GET'])
 def health():
