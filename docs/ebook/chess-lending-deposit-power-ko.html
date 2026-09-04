@@ -215,14 +215,19 @@
 
   @media print{
     :root{--paper:#fff;--surface:#fff;--surface-2:#f4f4f1;--ink:#000;--body:#1a1a1a;--line:#ccc}
-    body{font-size:10.5pt;line-height:1.62}
+    body{font-size:9.8pt;line-height:1.52}
+    .case-body{gap:.6rem;padding:.85rem 1rem}
+    .pc ul{line-height:1.5}
+    .ch-head{margin-bottom:1rem}
+    .flow{gap:.35rem}
+    .step{padding:.6rem .8rem}
     .wrap{max-width:none;padding:0}
     .cover{margin:0;padding:3rem 2rem;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    section{page-break-inside:auto;padding-top:1.6rem}
+    section{page-break-inside:auto;padding-top:1.1rem}
     .part{page-break-before:always}
     h2,h3{page-break-after:avoid}
     .script,.tablewrap,.callout,.step,.tile,.obj{page-break-inside:avoid}
-    @page{margin:18mm 16mm}
+    @page{margin:15mm 14mm}
   }
 </style>
 
@@ -234,7 +239,7 @@
     <h1>계약금이 지금 없어도<br>계약은 됩니다</h1>
     <p class="sub">Deposit Power 디파짓 본드를 한국어 쓰는 고객에게 설명하고, 반론에 답하고, 발행까지 끌고 가는 실무 매뉴얼.</p>
     <div class="cover-meta">
-      <span>Edition 1.1</span>
+      <span>Edition 2.0</span>
       <span>2026년 9월</span>
       <span>호주 부동산 대출 · 브로커 내부용</span>
     </div>
@@ -245,45 +250,33 @@
 <section id="howto">
   <div class="col">
     <div class="eyebrow">이 책의 사용법</div>
-    <h2 style="margin-top:.6rem">읽고 덮는 책이 아니라, 통화하면서 펴 두는 책</h2>
-    <p style="margin-top:1rem">디파짓 본드를 처음 듣는 고객에게 3분 안에 이해시키고, 자주 나오는 반론에 막히지 않고, 자격이 안 되는 건은 통화 초반에 걸러내자고 만든 자료입니다. 고객에게 그대로 건네는 브로슈어가 아니라 <strong>파는 사람이 보는 내부용</strong>입니다.</p>
-  </div>
-  <div class="band" style="margin-top:1.4rem">
-    <div class="grid2">
-      <div class="tile"><span class="tag">Part 1</span><h4>제품을 정확히 안다</h4><p>정의, 발행 구조, 비용, 자격. 여기서 흔들리면 뒤가 다 무너집니다.</p></div>
-      <div class="tile"><span class="tag">Part 2</span><h4>말로 옮긴다</h4><p>고객 유형 여섯, 첫 통화 스크립트, 물어볼 것 12개, 반론 열 가지.</p></div>
-      <div class="tile"><span class="tag">Part 3</span><h4>사고 없이 닫는다</h4><p>꼭 말해야 할 것, 케이스 여덟, 리드 관리, 자주 받는 질문.</p></div>
-    </div>
-  </div>
-  <div class="col">
-    <div class="callout warn" style="margin-top:1.4rem">
+    <h2 style="margin-top:.6rem">읽고 덮는 책이 아니라,<br>통화하면서 펴 두는 책</h2>
+    <p style="margin-top:1rem">디파짓 본드를 처음 듣는 고객에게 3분 안에 이해시키고, 자주 나오는 반론에 막히지 않고, 자격이 안 되는 건은 통화 초반에 걸러내자고 만든 자료입니다. 고객에게 건네는 브로슈어가 아니라 <strong>파는 사람이 보는 내부용</strong>입니다.</p>
+    <div class="callout warn" style="margin-top:1.2rem">
       <span class="k">먼저 읽어주세요</span>
-      본문의 수수료율과 기간, 한도는 <strong>2026년 9월 기준으로 공개된 자료</strong>를 정리한 것이고 계산은 전부 어림값입니다. 고객에게 실제로 제시하는 금액은 Deposit Power 공식 견적으로 꼭 확인해 주세요. 상품 조건은 발행 시점 약관이 우선합니다. 이 책은 금융 자문이 아니고, 고객 상황에 대한 최종 판단은 담당 브로커와 고객 쪽 변호사·회계사 몫입니다.
+      수수료율과 기간, 한도는 <strong>발행사 프레젠테이션 내용과 2026년 9월 기준 공개 자료</strong>를 정리한 것이고 계산은 전부 어림값입니다. 고객에게 제시하는 금액은 공식 견적으로 확인하세요. 이 책은 금융 자문이 아니고, 최종 판단은 담당 브로커와 고객 쪽 변호사·회계사 몫입니다.
     </div>
   </div>
 </section>
 
 <section id="toc">
-  <div class="toc col" style="max-width:38rem">
+  <div class="toc col" style="max-width:36rem">
     <h3>목차</h3>
     <ol>
       <li><span class="n">01</span><a href="#c1">디파짓 본드가 뭔가요</a></li>
-      <li><span class="n">02</span><a href="#c2">Deposit Power는 어떤 회사인가</a></li>
-      <li><span class="n">03</span><a href="#c3">발행부터 셋틀까지, 다섯 단계</a></li>
-      <li><span class="n">04</span><a href="#c4">비용: 숏텀과 롱텀은 파는 논리가 다르다</a></li>
-      <li><span class="n">05</span><a href="#c5">자격과 서류, 통화 5분 안에 거르기</a></li>
-      <li><span class="n">06</span><a href="#c6">이 상품이 팔리는 여섯 가지 상황</a></li>
-      <li><span class="n">07</span><a href="#c7">첫 통화 스크립트</a></li>
-      <li><span class="n">08</span><a href="#c8">신청서 열기 전에 물어볼 것 12개</a></li>
-      <li><span class="n">09</span><a href="#c9">반론 열 가지와 대답</a></li>
-      <li><span class="n">10</span><a href="#c10">현금 · 디파짓 본드 · 은행 보증서</a></li>
-      <li><span class="n">11</span><a href="#c11">꼭 말하고 넘어가야 할 다섯 가지</a></li>
-      <li><span class="n">12</span><a href="#c12">케이스 여덟, 좋은 점과 걸리는 점</a></li>
-      <li><span class="n">13</span><a href="#c13">리드 받고 발행까지</a></li>
-      <li><span class="n">14</span><a href="#c14">고객이 제일 많이 묻는 20가지</a></li>
-      <li><span class="n">A</span><a href="#apx-a">한국어-영어 용어 정리</a></li>
+      <li><span class="n">02</span><a href="#c2">24시간이면 나옵니다</a></li>
+      <li><span class="n">03</span><a href="#c3">비용과 기간</a></li>
+      <li><span class="n">04</span><a href="#c4">자격과 서류</a></li>
+      <li><span class="n">05</span><a href="#c5">이 상품이 팔리는 여섯 상황</a></li>
+      <li><span class="n">06</span><a href="#c6">첫 통화 스크립트</a></li>
+      <li><span class="n">07</span><a href="#c7">신청 전에 물어볼 것 10개</a></li>
+      <li><span class="n">08</span><a href="#c8">반론 여덟 가지</a></li>
+      <li><span class="n">09</span><a href="#c9">현금 · 본드 · 은행 보증서</a></li>
+      <li><span class="n">10</span><a href="#c10">꼭 말하고 넘어갈 다섯 가지</a></li>
+      <li><span class="n">11</span><a href="#c11">케이스 여덟</a></li>
+      <li><span class="n">12</span><a href="#c12">리드 받고 발행까지</a></li>
+      <li><span class="n">A</span><a href="#apx-a">용어와 빠른 답변</a></li>
       <li><span class="n">B</span><a href="#apx-b">발행 전 체크리스트</a></li>
-      <li><span class="n">C</span><a href="#apx-c">출처와 면책</a></li>
     </ol>
   </div>
 </section>
@@ -291,7 +284,7 @@
 <div class="part">
   <div class="part-label">Part 1</div>
   <h2>제품을 정확히 안다</h2>
-  <p>고객은 브로커가 머뭇거리는 순간을 귀신같이 알아챕니다. 정의, 구조, 비용, 자격 네 가지는 자료 안 보고 말할 수 있어야 합니다.</p>
+  <p>정의, 속도, 비용, 자격. 이 네 가지는 자료 안 보고 말할 수 있어야 합니다.</p>
 </div>
 
 <section id="c1">
@@ -305,18 +298,17 @@
   <div class="col">
     <div class="callout">
       <span class="k">고객에게 쓰는 한 문장</span>
-      <strong>"계약할 때 계약금 10%를 현금으로 넣는 대신, 보증서 한 장을 넣는 겁니다. 돈은 셋틀 날 한 번에 다 내시고요."</strong>
+      <strong>"익스체인지할 때 계약금 10%를 현금으로 넣는 대신 보증서 한 장을 넣는 겁니다. 돈은 셋틀 날 한 번에 다 내시고요."</strong>
     </div>
-    <p>디파짓 본드는 보험사가 인수하는 보증서입니다. 호주에서는 deposit guarantee라고도 부릅니다. 익스체인지할 때 내야 하는 계약금, 보통 매매가의 10%를 현금 대신 이 보증서로 대체하고 실제 돈은 셋틀 날 매매대금에 합쳐서 냅니다.</p>
-    <p>세 가지는 절대 헷갈리면 안 됩니다.</p>
+    <p>보험사가 인수하는 보증서입니다. 익스체인지 때 내야 하는 계약금, 보통 매매가의 10%를 이 보증서로 대체하고 실제 돈은 셋틀 날 매매대금에 합쳐서 냅니다. <strong>호주 전역에서 씁니다.</strong></p>
     <ul>
-      <li><strong>대출이 아닙니다.</strong> 빌려주는 돈 자체가 없으니 이자도 없고 갚을 일정도 없습니다. 고객이 내는 건 발행할 때 한 번 내는 수수료가 전부입니다.</li>
-      <li><strong>계약금을 안 내도 되는 게 아닙니다.</strong> 셋틀 날 계약금까지 포함해서 전액 냅니다. 내는 시점만 뒤로 밀리는 거죠.</li>
-      <li><strong>담보를 잡지 않습니다.</strong> 현금이나 집을 묶는 대신 발행사가 "이 사람이 셋틀할 수 있나"를 심사합니다.</li>
+      <li><strong>대출이 아닙니다.</strong> 빌려주는 돈이 없으니 이자도, 갚을 일정도 없습니다. 발행할 때 수수료 한 번이 전부입니다.</li>
+      <li><strong>계약금을 면제받는 게 아닙니다.</strong> 셋틀 날 전액 냅니다. 시점만 뒤로 밀립니다.</li>
+      <li><strong>담보를 잡지 않습니다.</strong> 대신 발행사가 "이 사람이 셋틀할 수 있나"를 심사합니다.</li>
     </ul>
-    <div class="callout warn" style="margin-top:1.2rem">
+    <div class="callout warn">
       <span class="k">사고는 거의 여기서 납니다</span>
-      고객이 셋틀을 못 하면 발행사가 매도인한테 <strong>계약금을 대신 내주고, 그 돈을 고객에게 청구</strong>합니다. "안 되면 그냥 없던 일이 되는 보험"이 아닙니다. 이 말은 첫 통화에서 꼭 하고 넘어가세요.
+      고객이 셋틀을 못 하면 발행사가 매도인이나 개발사에 <strong>계약금을 대신 내주고, 그 돈을 고객에게 청구</strong>합니다. 개발사 입장에서는 이미 디파짓을 받은 상태라 아쉬울 게 없고, 부담은 전부 매수인에게 남습니다. 첫 통화에서 이 말은 꼭 하고 넘어가세요.
     </div>
   </div>
 </section>
@@ -325,25 +317,22 @@
   <div class="ch-head">
     <div class="ch-num">02</div>
     <div>
-      <h2>Deposit Power는 어떤 회사인가</h2>
-      <p class="lede">"처음 들어보는 회산데요"가 나올 때 꺼낼 카드.</p>
+      <h2>24시간이면 나옵니다</h2>
+      <p class="lede">발행사가 어떤 회사인지, 그리고 발행부터 셋틀까지의 흐름.</p>
     </div>
   </div>
   <div class="col">
-    <p>디파짓 본드는 1980년대 후반에 호주에 들어왔고, <strong>Deposit Power는 1989년에 생긴 호주 최초의 디파짓 본드 회사</strong>입니다. 30년 넘게 이 상품 하나만 해왔습니다. 지금은 전자 보증서로 나가기 때문에 승인만 나면 몇 분 안에 받아서 익스체인지 자리에서 바로 낼 수 있습니다.</p>
-    <dl class="kv" style="margin-top:1.1rem">
-      <dt>설립</dt><dd>1989년, 호주 디파짓 본드 시장의 원조</dd>
-      <dt>인수 보험사</dt><dd>HDI Global Specialty SE, S&amp;P 신용등급 <strong>AA−(Very Strong)</strong></dd>
-      <dt>발행 형태</dt><dd>전자 보증서, 승인 후 몇 분 안에 발급</dd>
-      <dt>신청 경로</dt><dd>본인이 온라인으로 하거나, <strong>인증받은 브로커·컨베이언서·대출기관</strong>을 통해</dd>
-      <dt>브로커 채널</dt><dd>Broker Hub에서 신청, 10분 정도 걸립니다</dd>
-    </dl>
-    <div class="callout" style="margin-top:1.2rem">
-      <span class="k">이게 왜 세일즈 포인트냐면</span>
-      매도인이나 부동산 에이전트가 보증서를 거절하는 이유 중 하나가 <strong>"그 회사 믿을 만해요?"</strong>이기 때문입니다. 1989년부터 이것만 해온 회사고 보증은 S&amp;P AA− 등급 보험사가 선다는 말은, 매수인이 아니라 <strong>매도인 쪽을 설득할 때</strong> 씁니다.
+    <p><strong>Deposit Power</strong>는 1989년에 생긴 호주 최초의 디파짓 본드 회사로, 30년 넘게 이 상품만 해왔습니다. 보증은 <strong>HDI Global Specialty SE</strong>(S&amp;P 신용등급 AA−)가 서고, 전자 보증서로 나가기 때문에 <strong>신청부터 발행까지 24시간</strong>이면 됩니다. 매도인이나 에이전트가 "그 회사 믿을 만해요?"라고 할 때 쓰는 문장이 바로 이 두 줄입니다.</p>
+    <div class="flow" style="margin-top:1.1rem">
+      <div class="step"><div><h4>신청 · 24시간 내 발행</h4><p>셋틀할 수 있다는 근거 서류를 붙여 온라인으로 넣습니다. Broker Hub에서 10분이면 접수되고, 승인되면 전자 보증서가 바로 나옵니다.</p></div></div>
+      <div class="step"><div><h4>익스체인지 때 제출</h4><p>현금 이체 대신 보증서를 매도인 쪽에 냅니다. 보증서의 이름·주소·금액·만기일이 <strong>계약서와 글자 하나까지</strong> 같아야 합니다.</p></div></div>
+      <div class="step"><div><h4>셋틀까지 대기</h4><p>만기일까지 보증서는 살아 있고 고객 돈은 묶이지 않습니다. 셋틀이 만기를 넘길 것 같으면 미리 연장해야 하고 수수료가 붙습니다.</p></div></div>
+      <div class="step"><div><h4>셋틀</h4><p>계약금 포함 전액을 내면 보증서는 쓰이지 않고 끝납니다. 정상적으로 끝나면 보증서로 나가는 돈은 없습니다.</p></div></div>
     </div>
-    <h3 style="margin-top:1.6rem">Chess Lending의 자리</h3>
-    <p>Chess Lending은 시드니 기반 모기지 브로커리지로, 65개가 넘는 대출기관을 비교해서 주거용·상업용·건축 자금을 다루고 첫 주택 구매자와 재융자, 투자 건도 같이 봅니다. 여기서 디파짓 본드는 단독 상품이라기보다 <strong>문을 여는 상품</strong>에 가깝습니다. 본드 한 건 뒤에는 거의 항상 주택담보대출이나 브릿징, 재융자 상담이 따라옵니다. 이 점이 다음 장 비용 이야기의 전제가 됩니다.</p>
+    <div class="callout" style="margin-top:1.1rem">
+      <span class="k">받아줄지는 상대가 정합니다</span>
+      일반 매매는 매도인이, 오프더플랜은 <strong>개발사와 그쪽 펀더(자금 대주)</strong>가 결정합니다. 프로젝트마다 방침이 다르니 계약 전에 반드시 확인하세요.
+    </div>
   </div>
 </section>
 
@@ -351,22 +340,32 @@
   <div class="ch-head">
     <div class="ch-num">03</div>
     <div>
-      <h2>발행부터 셋틀까지, 다섯 단계</h2>
-      <p class="lede">고객에게는 이 다섯 개를 순서대로 그려주는 것만으로 설명이 끝납니다.</p>
+      <h2>비용과 기간</h2>
+      <p class="lede">숏텀과 롱텀은 가격표만 다른 게 아니라 <strong>파는 논리가 다릅니다.</strong></p>
     </div>
   </div>
   <div class="col">
-    <div class="flow">
-      <div class="step"><div><h4>자격 확인하고 신청</h4><p>고객이 셋틀할 수 있다는 걸 보여주는 서류를 챙겨서 온라인으로 넣습니다. 브로커 채널이면 10분쯤 걸리고, 숏텀은 거의 바로 승인이 납니다. 롱텀은 서류가 더 붙어도 보통 하루 안에 답이 옵니다.</p></div></div>
-      <div class="step"><div><h4>보증서 발행</h4><p>매수인과 매도인 이름, 물건 주소, 보증금액, 만기일이 찍힌 전자 보증서가 나옵니다. 이 항목들이 <strong>계약서와 글자 하나까지 같아야</strong> 합니다.</p></div></div>
-      <div class="step"><div><h4>익스체인지 때 제출</h4><p>현금 이체 대신 보증서를 매도인 쪽(에이전트나 변호사)에 내고 계약을 교환합니다. 받아줄지 말지는 <strong>매도인이 정하니까</strong> 미리 확인해 두는 게 필수입니다.</p></div></div>
-      <div class="step"><div><h4>셋틀까지 대기</h4><p>만기일까지 보증서는 그대로 살아 있고, 그동안 고객 돈은 묶이지 않습니다. 셋틀이 만기를 넘길 것 같으면 <strong>미리 연장</strong>해야 하고 수수료가 더 붙습니다.</p></div></div>
-      <div class="step"><div><h4>셋틀</h4><p>계약금까지 포함해서 전액을 내면 보증서는 쓰이지 않고 끝납니다. 정상적으로 끝나면 보증서로 매도인에게 나가는 돈은 없습니다.</p></div></div>
+    <p>수수료는 발행할 때 한 번이고 이후 이자나 관리비는 없습니다. 기간은 <strong>6개월에서 66개월</strong>, 보증금액은 <strong>1천만 달러 이하</strong>까지 다룹니다. 셋틀이 앞당겨지면 <strong>언제든 정리(unlock)할 수 있어서</strong> 기간을 넉넉히 잡아두는 편이 안전합니다.</p>
+    <div class="tablewrap" style="margin-top:1rem">
+      <table>
+        <caption>보증금액 곱하기 1.3%가 숏텀 암산 기준입니다. 실제 금액은 공식 견적으로 확인하세요.</caption>
+        <thead><tr><th>매매가</th><th>계약금 10%</th><th>숏텀 수수료</th><th>이렇게 말합니다</th></tr></thead>
+        <tbody>
+          <tr><td class="num">$650,000</td><td class="num">$65,000</td><td class="num">약 $845</td><td>"6주 동안 6만 5천 달러 안 묶는 값이 850불 정도예요."</td></tr>
+          <tr><td class="num">$850,000</td><td class="num">$85,000</td><td class="num">약 $1,105</td><td>"천 달러 조금 넘습니다. 집 팔릴 때까지 안 기다리고 지금 계약하실 수 있어요."</td></tr>
+          <tr><td class="num">$1,200,000</td><td class="num">$120,000</td><td class="num">약 $1,560</td><td>"스탬프 듀티 항목 하나보다 작은 돈입니다."</td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="callout stop" style="margin-top:1.2rem">
-      <span class="k">잘못되면 이렇게 갑니다</span>
-      셋틀을 못 하면 매도인이 보증서에 청구를 겁니다. 청구가 유효하면 <strong>Deposit Power가 매도인에게 계약금을 지급하고, 그 돈을 고객에게 받아냅니다.</strong> 빚이 없어지는 게 아니라 받을 사람만 바뀌는 겁니다.
+    <div class="callout warn" style="margin-top:1.2rem">
+      <span class="k">숏텀을 이자로 설득하지 마세요</span>
+      6주짜리 셋틀에서 6만 5천 달러를 오프셋에 넣어 아끼는 이자는 6%대로 잡아도 <strong>450불 남짓</strong>, 수수료 845불보다 적습니다. <strong>숏텀이 파는 건 이자가 아니라 타이밍</strong>입니다. 이자로 정당화하려 들면 계산해 보는 고객한테 그 자리에서 신뢰를 잃습니다.
     </div>
+    <div class="callout" style="margin-top:.8rem">
+      <span class="k">롱텀은 반대로 숫자로 팝니다</span>
+      오프더플랜 24개월짜리에서 9만 달러를 묶어두면 연 5%로만 잡아도 <strong>2년에 9천 달러</strong>를 포기하는 셈입니다. 롱텀 수수료가 그보다 낮으면 더 설명할 게 없습니다. 공식 견적을 받아 두 숫자를 나란히 보여주세요.
+    </div>
+    <p class="fine" style="margin-top:1rem"><strong>환불:</strong> 계약이 깨지면 발행 수수료는 보통 돌아오지 않습니다. 다만 조기 상환이나 잔여 기간이 길게 남은 경우의 처리는 건마다 다르니, 특히 12개월 넘게 남은 롱텀은 발행사에 개별 확인하세요.</p>
   </div>
 </section>
 
@@ -374,102 +373,86 @@
   <div class="ch-head">
     <div class="ch-num">04</div>
     <div>
-      <h2>비용</h2>
-      <p class="lede">숏텀과 롱텀은 가격표만 다른 게 아니라 <strong>파는 논리 자체가 다릅니다.</strong></p>
-    </div>
-  </div>
-  <div class="col">
-    <p>수수료는 발행할 때 한 번 내면 끝이고, 그 뒤로 이자나 관리비 같은 건 없습니다. 금액은 보증금액과 기간으로 정해집니다.</p>
-    <div class="tablewrap" style="margin-top:1rem">
-      <table>
-        <caption>공개 자료 기준 요약입니다. 실제 견적은 Deposit Power 공식 계산기로 확인하세요.</caption>
-        <thead><tr><th>구분</th><th>기간</th><th>주로 쓰는 데</th><th>요율 감각</th></tr></thead>
-        <tbody>
-          <tr><td><strong>숏텀</strong></td><td class="num">6개월 이내</td><td>일반 매매(보통 6주 셋틀), 지금 집 팔릴 때까지 대기</td><td>보증금액의 <strong>1.3% 안팎</strong>을 한 번</td></tr>
-          <tr><td><strong>롱텀</strong></td><td class="num">6~48개월</td><td>오프더플랜, 셋틀이 멀리 잡힌 계약</td><td>금액과 기간에 따라 산정, 기간이 길수록 올라감</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <h3 style="margin-top:1.7rem">숏텀은 고객 앞에서 3초면 계산됩니다</h3>
-    <p class="fine">보증금액 곱하기 1.3%. 아래는 계약금 10% 기준 어림값입니다.</p>
-    <div class="tablewrap" style="margin-top:.7rem">
-      <table>
-        <thead><tr><th>매매가</th><th>계약금 10%</th><th>수수료(1.3% 기준)</th><th>이렇게 말합니다</th></tr></thead>
-        <tbody>
-          <tr><td class="num">$650,000</td><td class="num">$65,000</td><td class="num">약 $845</td><td>"6주 동안 6만 5천 달러 안 묶는 값이 850불 정도예요."</td></tr>
-          <tr><td class="num">$850,000</td><td class="num">$85,000</td><td class="num">약 $1,105</td><td>"천 달러 조금 넘습니다. 집 팔릴 때까지 기다리지 않고 지금 계약하실 수 있어요."</td></tr>
-          <tr><td class="num">$1,200,000</td><td class="num">$120,000</td><td class="num">약 $1,560</td><td>"스탬프 듀티 항목 하나보다 작은 돈입니다."</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="callout warn" style="margin-top:1.3rem">
-      <span class="k">숏텀을 이자로 설득하지 마세요</span>
-      6주짜리 셋틀에서 6만 5천 달러를 오프셋에 넣어 아끼는 이자는 6%대 금리로 잡아도 <strong>450불 남짓</strong>입니다. 수수료 845불보다 적죠. <strong>숏텀에서 파는 건 이자가 아니라 타이밍</strong>입니다. 지금 이 물건을 잡느냐 놓치느냐. 이자로 정당화하려 들면 계산해 보는 고객한테 그 자리에서 신뢰를 잃습니다.
-    </div>
-    <div class="callout" style="margin-top:.9rem">
-      <span class="k">롱텀은 반대로 숫자로 팝니다</span>
-      오프더플랜 24개월짜리에서 9만 달러를 2년 묶어두면, 연 5%로만 잡아도 <strong>2년에 9천 달러쯤</strong>을 포기하는 셈입니다. 롱텀 수수료가 그보다 낮게 나오면 더 설명할 게 없습니다. 대신 꼭 공식 견적을 받아서 두 숫자를 나란히 보여주세요.
-    </div>
-    <p style="margin-top:1.2rem"><strong>환불은 안 됩니다.</strong> 계약이 깨져도 발행 수수료는 보통 돌려받지 못합니다. 성사 가능성이 낮은 건에 성급하게 발행하지 마세요.</p>
-  </div>
-</section>
-
-<section id="c5">
-  <div class="ch-head">
-    <div class="ch-num">05</div>
-    <div>
       <h2>자격과 서류</h2>
       <p class="lede">통화 5분 안에 "이 고객 되겠는데"를 판단하는 기준.</p>
     </div>
   </div>
   <div class="col">
-    <p>디파짓 본드는 아무나 되는 상품이 아닙니다. 발행사가 보는 건 딱 하나, <strong>"이 사람이 셋틀 날 실제로 돈을 낼 수 있나"</strong>입니다. 담보를 안 잡는 대신 심사가 그 자리를 대신한다고 보면 정확합니다.</p>
-    <h3 style="margin-top:1.5rem">6개월 이내 숏텀은 길이 두 개입니다</h3>
-    <div class="grid2" style="margin-top:.7rem">
-      <div class="tile"><span class="tag">경로 A</span><h4>셋틀 자금을 증명</h4><p>무조건부 대출 승인, 이미 계약된 기존 집의 매각 대금, 충분한 예금처럼 <strong>잔금을 낼 수 있다는 증거</strong>를 냅니다.</p></div>
-      <div class="tile"><span class="tag">경로 B</span><h4>갖고 있는 집의 순자산</h4><p>보유한 부동산에 남은 순자산이 충분하면 서류가 훨씬 가볍게 갑니다.</p></div>
+    <p>발행사가 보는 건 하나입니다. <strong>"이 사람이 셋틀 날 실제로 돈을 낼 수 있나."</strong> 담보를 안 잡는 대신 심사가 그 자리를 대신합니다.</p>
+    <div class="grid2" style="margin-top:.9rem">
+      <div class="tile"><span class="tag">경로 A</span><h4>셋틀 자금을 증명</h4><p>무조건부 대출 승인, 이미 계약된 기존 집의 매각 대금, 충분한 예금처럼 잔금을 낼 수 있다는 증거를 냅니다.</p></div>
+      <div class="tile"><span class="tag">경로 B</span><h4>갖고 있는 집의 순자산</h4><p>보유 부동산에 남은 에쿼티가 충분하면 서류가 훨씬 가볍게 갑니다.</p></div>
     </div>
-    <h3 style="margin-top:1.6rem">누구 이름으로 신청하느냐에 따라</h3>
+    <h3 style="margin-top:1.5rem">챙길 것은 결국 세 가지</h3>
     <ul>
-      <li><strong>개인:</strong> 기본입니다. 신분 확인하고 셋틀 능력만 보면 됩니다.</li>
-      <li><strong>법인, 트러스트 수탁 법인:</strong> 이사들이 신청서를 승인해야 하고 <strong>보증·면책서(Guarantee &amp; Indemnity)</strong>를 따로 씁니다.</li>
-      <li><strong>공동명의:</strong> 신청에 안 들어가는 공동명의자가 있으면 그 사람이 보증인으로 요구될 수 있습니다.</li>
-      <li><strong>첫 주택 구매자:</strong> 혼자서는 자격이 안 나올 때, 순자산 있는 가족이 보증인으로 들어가 통과시키는 구조를 자주 씁니다.</li>
-      <li><strong>거주 자격:</strong> 시민권자나 영주권자 요건이 있습니다. 그 외 신분이면 미리 개별 확인하세요.</li>
+      <li><strong>신분증(ID)</strong> · 기본 확인 서류.</li>
+      <li><strong>보증인</strong> · 고객 혼자 자격이 안 나오면 부모님 집처럼 에쿼티 있는 부동산을 가진 가족이 보증인으로 들어갑니다. 첫 주택 구매자 건은 거의 이 구조입니다.</li>
+      <li><strong>밸류에이션</strong> · 그 부동산 가치를 확인할 자료가 필요합니다. RP Data 리포트나 다른 감정 자료를 쓰고, <strong>없으면 Chess Lending에서 밸류에이션을 뽑아 드릴 수 있습니다.</strong></li>
     </ul>
-    <div class="callout" style="margin-top:1.2rem">
-      <span class="k">실무 규칙 하나</span>
-      롱텀은 서류가 더 붙고 시간도 더 걸립니다. 오프더플랜은 <strong>익스체인지 예정일에서 최소 일주일 전</strong>에는 신청을 시작한다고 정해 두세요.
+    <div class="callout" style="margin-top:1rem">
+      <span class="k">이게 우리 차별점입니다</span>
+      고객이 밸류에이션 자료가 없어서 막히는 경우가 생각보다 많습니다. "그건 저희가 뽑아 드릴게요" 한마디로 건이 살아납니다. 통화에서 아끼지 말고 쓰세요.
     </div>
+    <p class="fine" style="margin-top:1rem">법인이나 트러스트 명의면 이사 승인과 보증·면책서(Guarantee &amp; Indemnity)가 추가됩니다. 공동명의 부동산은 신청에 안 들어가는 공동명의자가 보증인으로 요구될 수 있고, 시민권·영주권 요건도 있으니 그 외 신분이면 미리 확인하세요. 롱텀은 서류가 더 붙으니 <strong>익스체인지 예정일 최소 일주일 전</strong>에는 신청을 시작합니다.</p>
   </div>
 </section>
 
 <div class="part">
   <div class="part-label">Part 2</div>
   <h2>말로 옮긴다</h2>
-  <p>제품을 아는 것과 파는 것은 다릅니다. 여기부터는 통화에서 그대로 읽어도 되는 문장들입니다.</p>
+  <p>여기부터는 통화에서 그대로 읽어도 되는 문장들입니다.</p>
 </div>
+
+<section id="c5">
+  <div class="ch-head">
+    <div class="ch-num">05</div>
+    <div>
+      <h2>이 상품이 팔리는 여섯 상황</h2>
+      <p class="lede">돈 없는 사람 상품이 아니라 <strong>돈의 타이밍이 어긋난 사람</strong> 상품입니다.</p>
+    </div>
+  </div>
+  <div class="band">
+    <div class="grid2">
+      <div class="tile"><span class="tag">유형 01</span><h4>갈아타기</h4><p>지금 집을 팔기 전에 다음 집을 잡아야 하는 고객. 현금이 아직 살던 집에 들어 있습니다. 전환율이 제일 높습니다.</p></div>
+      <div class="tile"><span class="tag">유형 02</span><h4>오프더플랜</h4><p>완공까지 1~3년. 계약금을 그 기간 내내 신탁계좌에 넣어둘 이유가 없습니다. 롱텀의 주력.</p></div>
+      <div class="tile"><span class="tag">유형 03</span><h4>투자자</h4><p>돈을 다른 데 굴리고 싶어 합니다. 기회비용 이야기가 제일 잘 통합니다.</p></div>
+      <div class="tile"><span class="tag">유형 04</span><h4>첫 주택 + 가족 보증</h4><p>예금은 모자라도 부모님이 에쿼티 있는 집을 갖고 계신 경우.</p></div>
+      <div class="tile"><span class="tag">유형 05</span><h4>자영업, 법인</h4><p>운전자금을 계약금으로 빼면 사업이 흔들립니다.</p></div>
+      <div class="tile"><span class="tag">유형 06</span><h4>예금 만기 대기</h4><p>지금 깨면 손해 보는 돈. 만기가 셋틀 날과 비슷할 때 다리를 놔줍니다.</p></div>
+    </div>
+    <div class="callout warn" style="margin-top:1.1rem">
+      <span class="k">이런 고객에게는 팔지 마세요</span>
+      잔금 계획을 물었을 때 <strong>"그때 되면 어떻게든 되겠죠"</strong>라고 답하는 고객. 본드는 셋틀 능력을 만들어 주지 못합니다. 무리하게 통과시켜 발행하면 나중에 고객과 브로커를 같이 칩니다.
+    </div>
+  </div>
+</section>
 
 <section id="c6">
   <div class="ch-head">
     <div class="ch-num">06</div>
     <div>
-      <h2>이 상품이 팔리는 여섯 가지 상황</h2>
-      <p class="lede">디파짓 본드는 돈 없는 사람 상품이 아니라, <strong>돈의 타이밍이 어긋난 사람</strong> 상품입니다.</p>
+      <h2>첫 통화 스크립트</h2>
+      <p class="lede">리드 받고 10분 안에. 목표는 계약이 아니라 <strong>세 가지 정보</strong>입니다.</p>
     </div>
   </div>
-  <div class="band">
-    <div class="grid2">
-      <div class="tile"><span class="tag">유형 01</span><h4>갈아타기</h4><p>지금 집을 팔기 전에 다음 집을 잡아야 하는 고객. 자산은 충분한데 <strong>현금이 아직 살던 집에 들어</strong> 있습니다. 전환율이 제일 높습니다.</p></div>
-      <div class="tile"><span class="tag">유형 02</span><h4>오프더플랜</h4><p>완공까지 1~3년. 계약금 10%를 그 기간 내내 개발사 신탁계좌에 넣어둘 이유가 없습니다. <strong>롱텀의 주력 시장.</strong></p></div>
-      <div class="tile"><span class="tag">유형 03</span><h4>투자자</h4><p>돈을 주식이나 사업, 다른 물건에 돌려두고 싶어 합니다. 기회비용 이야기가 제일 잘 통하는 고객.</p></div>
-      <div class="tile"><span class="tag">유형 04</span><h4>첫 주택 + 가족 보증</h4><p>예금은 모자라지만 부모님이 순자산 있는 집을 갖고 계신 경우. 보증인을 붙여 자격을 만듭니다.</p></div>
-      <div class="tile"><span class="tag">유형 05</span><h4>자영업, 법인 매수</h4><p>운전자금을 계약금으로 빼면 사업이 흔들립니다. 다만 법인이나 트러스트는 서류가 늘어난다고 미리 말해 두세요.</p></div>
-      <div class="tile"><span class="tag">유형 06</span><h4>예금 만기 대기</h4><p>지금 깨면 손해 보는 돈. 만기가 셋틀 날보다 늦거나 비슷할 때 본드가 다리를 놔줍니다.</p></div>
+  <div class="col">
+    <div class="script">
+      <div class="script-title">오프닝 30초</div>
+      <div class="line me"><div class="who">브로커</div><div>안녕하세요, Chess Lending OOO입니다. 방금 디파짓 본드 문의 남겨주셔서 바로 전화드렸어요. 1분만 통화 괜찮으실까요?</div></div>
+      <div class="line"><div class="who">고객</div><div>네, 그게 정확히 뭔지 몰라서 일단 신청해 봤어요.</div></div>
+      <div class="line me"><div class="who">브로커</div><div>간단합니다. 집 계약할 때 계약금 10%를 그 자리에서 현금으로 넣잖아요. 그걸 <strong>보증서 한 장으로 대신하는 것</strong>입니다. 돈은 셋틀 날 한 번에 내시고요. 대출이 아니라 이자도 없고, 신청하면 <strong>24시간 안에</strong> 나옵니다.</div></div>
+      <div class="line"><div class="who">고객</div><div>아, 그럼 계약금을 안 내도 되는 거네요?</div></div>
+      <div class="line me"><div class="who">브로커</div><div>내는 <strong>시점만</strong> 미뤄지는 거예요. 계약금은 셋틀 날 매매대금에 포함해서 내십니다. 그래서 셋틀 날 돈이 어떻게 준비되는지를 먼저 여쭤봐야 해요. 세 가지만 여쭐게요.</div></div>
     </div>
-    <div class="callout warn" style="margin-top:1.3rem">
-      <span class="k">이런 고객에게는 팔지 마세요</span>
-      잔금 계획을 물었을 때 <strong>"그때 되면 어떻게든 되겠죠"</strong>라고 답하는 고객. 본드는 셋틀 능력을 만들어 주지 못합니다. 심사에서 걸러지는 게 맞고, 무리하게 통과시켜 발행하면 나중에 구상 사고가 고객과 브로커를 같이 칩니다.
+    <div class="script" style="margin-top:.9rem">
+      <div class="script-title">핵심 세 가지 · 여기서 자격의 8할이 갈립니다</div>
+      <div class="line me"><div class="who">Q1</div><div>지금 봐 두신 물건이 있으세요, 아직 찾는 중이세요? <span class="fine">(있으면 급한 건)</span></div></div>
+      <div class="line me"><div class="who">Q2</div><div>잔금은 대출로 하실 거예요, 지금 집 파신 돈으로 하실 거예요, 갖고 계신 자금이세요? <span class="fine">(경로 A인지 B인지)</span></div></div>
+      <div class="line me"><div class="who">Q3</div><div>셋틀까지 6주 정도예요, 오프더플랜처럼 1년 넘게 남았어요? <span class="fine">(숏텀인지 롱텀인지)</span></div></div>
+    </div>
+    <div class="callout" style="margin-top:1.1rem">
+      <span class="k">통화는 이렇게 닫습니다</span>
+      "오늘 안에 정확한 견적 뽑아서 문자로 보내드릴게요. 대신 <strong>매도인 쪽에서 디파짓 본드를 받아주는지</strong>만 에이전트나 변호사한테 확인해 주세요. 그것만 되면 나머지는 제가 진행하겠습니다."
     </div>
   </div>
 </section>
@@ -478,28 +461,26 @@
   <div class="ch-head">
     <div class="ch-num">07</div>
     <div>
-      <h2>첫 통화 스크립트</h2>
-      <p class="lede">리드 받고 10분 안에. 목표는 계약이 아니라 <strong>자격 판단에 필요한 세 가지</strong>를 얻는 겁니다.</p>
+      <h2>신청 전에 물어볼 것 10개</h2>
+      <p class="lede">순서대로 물으면 취조처럼 들리지 않습니다.</p>
     </div>
   </div>
   <div class="col">
-    <div class="script">
-      <div class="script-title">오프닝 30초 · 광고 리드 회신</div>
-      <div class="line me"><div class="who">브로커</div><div>안녕하세요, Chess Lending OOO입니다. 방금 디파짓 본드 문의 남겨주셔서 바로 전화드렸어요. 1분만 통화 괜찮으실까요?</div></div>
-      <div class="line"><div class="who">고객</div><div>네, 그게 정확히 뭔지 몰라서 일단 신청해 봤어요.</div></div>
-      <div class="line me"><div class="who">브로커</div><div>간단합니다. 집 계약할 때 보통 계약금 10%를 그 자리에서 현금으로 넣잖아요. 그걸 <strong>보증서 한 장으로 대신하는 것</strong>입니다. 돈은 셋틀 날 한 번에 내시고요. 대출이 아니라서 이자도 없고, 발행할 때 수수료 한 번이면 끝납니다.</div></div>
-      <div class="line"><div class="who">고객</div><div>아, 그럼 계약금을 안 내도 되는 거네요?</div></div>
-      <div class="line me"><div class="who">브로커</div><div>내는 <strong>시점만</strong> 미뤄지는 거예요. 계약금은 셋틀 날 매매대금에 포함해서 내십니다. 그래서 제가 먼저 여쭤봐야 할 게 셋틀 날 돈이 어떻게 준비되는지예요. 세 가지만 여쭐게요.</div></div>
-    </div>
-    <div class="script" style="margin-top:1rem">
-      <div class="script-title">핵심 세 가지 · 여기서 자격의 8할이 갈립니다</div>
-      <div class="line me"><div class="who">Q1</div><div>지금 봐 두신 물건이 있으세요, 아니면 아직 찾는 중이세요? <span class="fine">(있으면 급한 건)</span></div></div>
-      <div class="line me"><div class="who">Q2</div><div>잔금은 대출로 하실 거예요, 지금 집 파신 돈으로 하실 거예요, 아니면 갖고 계신 자금이세요? <span class="fine">(경로 A인지 B인지)</span></div></div>
-      <div class="line me"><div class="who">Q3</div><div>셋틀까지 6주 정도예요, 아니면 오프더플랜처럼 1년 넘게 남았어요? <span class="fine">(숏텀인지 롱텀인지)</span></div></div>
-    </div>
-    <div class="callout" style="margin-top:1.2rem">
-      <span class="k">통화는 이렇게 닫습니다</span>
-      "오늘 안에 정확한 견적 뽑아서 문자로 보내드릴게요. 대신 한 가지만 확인 부탁드립니다. <strong>매도인 쪽에서 디파짓 본드를 받아주는지</strong> 부동산 에이전트나 변호사한테 물어봐 주세요. 그것만 확인되면 나머지는 제가 진행하겠습니다."
+    <ol>
+      <li>매매가랑 계약금 비율이 어떻게 되나요? <span class="fine">(10%가 아닌 경우도 흔합니다)</span></li>
+      <li>익스체인지랑 셋틀 날짜는 잡히셨어요?</li>
+      <li>매도인이나 개발사가 디파짓 본드 받아준다고 했나요?</li>
+      <li>경매 물건인가요, 일반 매매인가요?</li>
+      <li>대출은 어디까지 됐어요? 사전승인인가요, 무조건부 승인인가요?</li>
+      <li>지금 갖고 계신 집이 있으면 시세랑 남은 대출이 얼마예요?</li>
+      <li>그 집 공동명의예요? 공동명의자도 같이 들어가시나요?</li>
+      <li>밸류에이션 자료 갖고 계세요? <span class="fine">(없으면 우리가 뽑아준다고 바로 말합니다)</span></li>
+      <li>신청은 개인 명의예요, 법인이나 트러스트예요? 시민권·영주권은요?</li>
+      <li>오프더플랜이면 완공 예정이랑 계약서상 sunset date가 언제예요?</li>
+    </ol>
+    <div class="callout" style="margin-top:1.1rem">
+      <span class="k">10번을 특히 챙기세요</span>
+      롱텀에서 제일 자주 사고 나는 항목입니다. 본드 만기가 실제 셋틀 날보다 짧으면 연장 수수료를 또 냅니다. 언제든 정리할 수 있으니 <strong>처음부터 넉넉히 잡는 게</strong> 두 번 내는 것보다 쌉니다.
     </div>
   </div>
 </section>
@@ -508,29 +489,52 @@
   <div class="ch-head">
     <div class="ch-num">08</div>
     <div>
-      <h2>신청서 열기 전에 물어볼 것 12개</h2>
-      <p class="lede">순서대로 물으면 취조처럼 들리지 않습니다.</p>
+      <h2>반론 여덟 가지</h2>
+      <p class="lede">고객이 실제로 하는 말과, 그대로 읽어도 되는 대답.</p>
     </div>
   </div>
   <div class="col">
-    <ol>
-      <li>매매가랑 계약금 비율이 어떻게 되나요? <span class="fine">(10%가 아닌 경우도 흔합니다)</span></li>
-      <li>익스체인지는 언제로 보고 계세요?</li>
-      <li>셋틀 날짜는 협의가 됐나요?</li>
-      <li>매도인이나 개발사가 디파짓 본드 받아준다고 했나요?</li>
-      <li>경매 물건인가요, 일반 매매인가요?</li>
-      <li>대출은 어디까지 진행됐어요? 사전승인인가요, 무조건부 승인인가요?</li>
-      <li>지금 갖고 계신 집이 있으면 시세랑 남은 대출이 얼마예요?</li>
-      <li>그 집은 공동명의예요? 공동명의자도 이번 신청에 같이 들어가시나요?</li>
-      <li>신청은 개인 명의예요, 법인이나 트러스트예요?</li>
-      <li>시민권이나 영주권 갖고 계세요?</li>
-      <li>오프더플랜이면 완공 예정이 언제고, 계약서상 sunset date는 언제로 돼 있어요?</li>
-      <li>보증인이 필요해지면 들어와 주실 가족이 있으세요?</li>
-    </ol>
-    <div class="callout" style="margin-top:1.2rem">
-      <span class="k">11번을 특히 챙기세요</span>
-      롱텀에서 제일 자주 사고가 나는 항목입니다. 본드 만기가 실제 셋틀 날보다 짧게 잡히면 연장 수수료를 또 냅니다. 처음부터 넉넉하게 잡는 게 두 번 내는 것보다 쌉니다.
+
+    <div class="obj">
+      <div class="said">이거 대출이죠? 이자 얼마예요?</div>
+      <div class="say">대출이 아닙니다. 빌려드리는 돈이 없어서 이자도 없고 갚는 일정도 없어요. 발행할 때 <strong>수수료 한 번</strong> 내시면 그 뒤로 청구되는 게 없습니다.</div>
     </div>
+
+    <div class="obj">
+      <div class="said">천 달러 넘게 내느니 그냥 현금으로 넣을게요.</div>
+      <div class="say">현금이 지금 자유롭게 쓸 수 있는 상태면 현금이 낫습니다. 제가 이걸 권하는 경우는 하나예요. <strong>돈은 있는데 지금 그 자리에 없을 때.</strong> 집을 아직 안 파셨거나, 정기예금이 안 깨지거나, 사업 운전자금이거나. 어느 쪽이세요?</div>
+    </div>
+
+    <div class="obj">
+      <div class="said">매도인이 안 받아준다고 하면요?</div>
+      <div class="say">받아줄지는 매도인이, 오프더플랜이면 개발사랑 그쪽 펀더가 정합니다. 그래서 계약 전에 확인하는 게 순서예요. 거절 이유는 보통 둘 중 하나입니다. 그 계약금을 바로 빼 써야 하거나, 발행사를 못 미더워하거나. <strong>두 번째는 제가 풉니다.</strong> 1989년부터 이것만 해온 회사고 보증은 S&amp;P AA− 등급 보험사가 섭니다. 정리해서 상대 변호사한테 바로 보내드릴게요.</div>
+    </div>
+
+    <div class="obj">
+      <div class="said">경매에서도 되나요?</div>
+      <div class="say">경매는 조건 없이 바로 계약이라 대부분 현금을 요구합니다. 쓰시려면 <strong>입찰 전에 서면 동의</strong>를 꼭 받으셔야 해요. 확인 안 된 상태로는 입찰하시면 안 됩니다.</div>
+    </div>
+
+    <div class="obj">
+      <div class="said">셋틀 때 돈이 안 되면 어떻게 돼요?</div>
+      <div class="say">보증서가 그 상황을 막아주지는 않습니다. 셋틀을 못 하시면 발행사가 상대방에게 계약금을 대신 내주고 <strong>그 돈을 고객님께 청구</strong>합니다. 개발사는 이미 디파짓을 받은 상태고, 빚은 받을 사람만 바뀌는 거예요. 그래서 제가 잔금 계획부터 여쭤봅니다.</div>
+    </div>
+
+    <div class="obj">
+      <div class="said">계약 깨지면 수수료 돌려받나요?</div>
+      <div class="say">보통 안 돌려받습니다. 그래서 계약이 실제로 될 단계에서 발행합니다. 아직 협상 중이시면 견적만 받아두고 기다리는 게 맞아요.</div>
+    </div>
+
+    <div class="obj">
+      <div class="said">완공이 늦어져서 기간 넘기면요?</div>
+      <div class="say">만기 전에 <strong>연장</strong>하셔야 하고 수수료가 붙습니다. 그래서 처음부터 넉넉히 잡습니다. 셋틀이 당겨지면 언제든 정리할 수 있으니 길게 잡아도 손해가 아니에요.</div>
+    </div>
+
+    <div class="obj">
+      <div class="said">은행 보증서(bank guarantee)랑 뭐가 달라요?</div>
+      <div class="say">담보랑 속도입니다. 은행 보증서는 <strong>현금이나 집을 담보로 묶고</strong> 몇 주 걸립니다. 디파짓 본드는 담보 없이 24시간이면 나옵니다.</div>
+    </div>
+
   </div>
 </section>
 
@@ -538,94 +542,20 @@
   <div class="ch-head">
     <div class="ch-num">09</div>
     <div>
-      <h2>반론 열 가지와 대답</h2>
-      <p class="lede">고객이 실제로 하는 말, 왜 그렇게 말하는지, 그대로 읽어도 되는 대답.</p>
-    </div>
-  </div>
-  <div class="col">
-
-    <div class="obj">
-      <div class="said">이거 대출이죠? 이자 얼마예요?</div>
-      <div class="why">제일 흔한 오해입니다. 여기서 못 끊으면 나머지 설명이 전부 대출 이야기로 들립니다.</div>
-      <div class="say">대출이 아닙니다. 빌려드리는 돈이 없어서 이자도 없고 갚는 일정도 없어요. 발행할 때 <strong>수수료 한 번</strong> 내시면 그 뒤로 청구되는 게 없습니다.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">천 달러 넘게 내느니 그냥 현금으로 넣을게요.</div>
-      <div class="why">현금이 진짜 준비된 고객입니다. 이럴 땐 무리해서 팔지 않는 게 맞습니다.</div>
-      <div class="say">현금이 지금 자유롭게 쓸 수 있는 상태면 현금이 낫습니다. 제가 이걸 권하는 경우는 하나예요. <strong>돈은 있는데 지금 그 자리에 없을 때.</strong> 지금 집을 아직 안 파셨거나, 정기예금이 안 깨지거나, 사업 운전자금이거나. 어느 쪽이세요?</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">매도인이 안 받아준다고 하면요?</div>
-      <div class="why">맞는 걱정입니다. 실제로 매도인이 정하는 문제고 거절 사례도 있습니다.</div>
-      <div class="say">받아줄지는 매도인이 정합니다. 그래서 계약 전에 확인하는 게 순서예요. 거절하는 이유는 보통 둘 중 하나입니다. 그 계약금을 바로 빼서 다음 집 사는 데 써야 하거나, 발행사를 못 미더워하거나. <strong>두 번째는 제가 풀 수 있습니다.</strong> 1989년부터 이 상품만 해온 회사고 보증은 S&amp;P AA− 등급 보험사가 섭니다. 이 내용 정리해서 매도인 쪽 변호사한테 바로 보내드릴게요.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">경매에서도 되나요?</div>
-      <div class="why">한국분들이 특히 자주 묻습니다. 잘못 답하면 낙찰 현장에서 사고가 납니다.</div>
-      <div class="say">경매는 조건 없이 바로 계약이라 대부분 <strong>현금 계약금을 요구</strong>합니다. 쓰시려면 입찰 전에 매도인 쪽 서면 동의를 꼭 받아야 해요. 확인 안 된 상태로는 입찰하시면 안 됩니다.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">셋틀 때 돈이 안 되면 어떻게 돼요?</div>
-      <div class="why">정직하게 답해야 하는 질문입니다. 여기서 얼버무리면 나중에 분쟁이 됩니다.</div>
-      <div class="say">보증서가 그 상황을 막아주지는 않습니다. 셋틀을 못 하시면 발행사가 매도인한테 계약금을 대신 내주고, <strong>그 돈을 고객님께 청구</strong>합니다. 빚이 없어지는 게 아니라 받을 사람만 바뀌는 거예요. 그래서 제가 잔금 계획부터 여쭤보는 겁니다.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">신용점수에 영향 있나요?</div>
-      <div class="why">대출로 오해한 상태가 이어진 질문입니다.</div>
-      <div class="say">대출을 실행하는 게 아니라서 대출처럼 잡히지는 않습니다. 다만 발행사가 <strong>셋틀 능력 심사</strong>를 하고 여기에 재무 확인이 들어갑니다. 신용조회를 어떤 방식으로 하는지는 신청 시점 약관에 따라 다르니, 진행 전에 확인해서 알려드리겠습니다.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">계약 깨지면 수수료 돌려받나요?</div>
-      <div class="why">언제 발행할지를 결정하는 질문입니다.</div>
-      <div class="say">보통 <strong>안 돌려받습니다.</strong> 그래서 계약이 실제로 될 단계에서 발행합니다. 아직 협상 중이시면 견적만 받아두고 기다리는 게 맞아요.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">완공이 늦어져서 기간 넘기면요?</div>
-      <div class="why">오프더플랜 고객의 진짜 리스크입니다. 고객이 묻기 전에 먼저 꺼내세요.</div>
-      <div class="say">만기 전에 <strong>연장</strong>하셔야 하고 수수료가 더 붙습니다. 그래서 처음부터 기간을 넉넉히 잡습니다. 계약서 sunset date 보고 여유 두고 설계해 드릴게요.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">은행 보증서(bank guarantee)랑 뭐가 달라요?</div>
-      <div class="why">법인이나 투자자 고객이 자주 비교합니다. 10장 표를 그대로 씁니다.</div>
-      <div class="say">담보랑 속도가 제일 크게 다릅니다. 은행 보증서는 <strong>현금이나 집을 담보로 묶고</strong> 서류 때문에 몇 주 걸립니다. 디파짓 본드는 담보를 안 묶고 하루이틀, 숏텀이면 당일도 됩니다.</div>
-    </div>
-
-    <div class="obj">
-      <div class="said">부동산 에이전트가 별로 안 좋아하던데요.</div>
-      <div class="why">사실입니다. 계약금에서 수수료를 정산받는 관행 때문에 현금을 선호하는 에이전트가 있습니다.</div>
-      <div class="say">맞습니다, 그런 경우 있어요. 그런데 그건 매수인 자격 문제가 아니라 <strong>에이전트 쪽 정산 방식 문제</strong>입니다. 그래서 계약 전에 정리하는 거고, 정 안 되면 그 물건은 현금으로 가고 다른 방법을 찾으면 됩니다.</div>
-    </div>
-
-  </div>
-</section>
-
-<section id="c10">
-  <div class="ch-head">
-    <div class="ch-num">10</div>
-    <div>
-      <h2>현금 · 디파짓 본드 · 은행 보증서</h2>
-      <p class="lede">화이트보드에 그대로 옮겨 그릴 수 있는 세 칸짜리 표.</p>
+      <h2>현금 · 본드 · 은행 보증서</h2>
+      <p class="lede">화이트보드에 그대로 옮겨 그릴 수 있는 표.</p>
     </div>
   </div>
   <div style="max-width:100%">
     <div class="tablewrap">
       <table>
-        <caption>공개 자료 기준의 일반적인 차이입니다. 개별 조건은 기관과 상품마다 다릅니다.</caption>
         <thead><tr><th>항목</th><th>현금 계약금</th><th>디파짓 본드</th><th>은행 보증서</th></tr></thead>
         <tbody>
           <tr><td><strong>담보</strong></td><td>자금 전액이 묶임</td><td><strong>안 묶음</strong>, 대신 심사</td><td>현금이나 부동산을 묶음</td></tr>
-          <tr><td><strong>준비 기간</strong></td><td>돈만 있으면 즉시</td><td><strong>몇 분에서 하루이틀</strong></td><td>보통 몇 주</td></tr>
-          <tr><td><strong>비용</strong></td><td>없음, 대신 기회비용</td><td>한 번 내는 수수료(숏텀 1.3% 안팎)</td><td>설정비에 연 단위 수수료(은행 공표 기준 대략 연 1.5~3.5%)</td></tr>
-          <tr><td><strong>매도인이 받아주나</strong></td><td>항상</td><td>매도인이 정함, 미리 확인 필요</td><td>대체로 받지만 시간이 걸림</td></tr>
-          <tr><td><strong>이럴 때 씁니다</strong></td><td>현금이 이미 자유로울 때</td><td>돈은 있는데 <strong>시점이 어긋날 때</strong></td><td>금액이 크고 기관이 요구할 때</td></tr>
+          <tr><td><strong>준비 기간</strong></td><td>돈만 있으면 즉시</td><td><strong>24시간</strong></td><td>보통 몇 주</td></tr>
+          <tr><td><strong>비용</strong></td><td>없음, 대신 기회비용</td><td>한 번 내는 수수료(숏텀 1.3% 안팎)</td><td>설정비에 연 단위 수수료</td></tr>
+          <tr><td><strong>받아주나</strong></td><td>항상</td><td>매도인·개발사가 정함</td><td>대체로 받지만 시간이 걸림</td></tr>
+          <tr><td><strong>이럴 때</strong></td><td>현금이 이미 자유로울 때</td><td>돈은 있는데 <strong>시점이 어긋날 때</strong></td><td>금액이 크고 기관이 요구할 때</td></tr>
         </tbody>
       </table>
     </div>
@@ -635,64 +565,63 @@
 <div class="part">
   <div class="part-label">Part 3</div>
   <h2>사고 없이 닫는다</h2>
-  <p>탈 없이 끝난 건이 다음 소개를 만듭니다. 마지막은 꼭 말해야 할 것, 실제로 벌어지는 상황들, 그리고 리드가 발행으로 이어지는 흐름입니다.</p>
+  <p>탈 없이 끝난 건이 다음 소개를 만듭니다.</p>
 </div>
 
-<section id="c11">
+<section id="c10">
   <div class="ch-head">
-    <div class="ch-num">11</div>
+    <div class="ch-num">10</div>
     <div>
-      <h2>꼭 말하고 넘어가야 할 다섯 가지</h2>
+      <h2>꼭 말하고 넘어갈 다섯 가지</h2>
       <p class="lede">계약 전에 말하면 신뢰가 되고, 사고 나고 말하면 분쟁이 됩니다.</p>
     </div>
   </div>
   <div class="col">
     <ol>
-      <li><strong>계약금이 없어지는 게 아닙니다.</strong> 셋틀 날 전액 냅니다. 시점만 바뀝니다.</li>
-      <li><strong>셋틀을 못 하면 청구가 옵니다.</strong> 발행사가 매도인한테 준 돈은 고객이 갚아야 합니다.</li>
-      <li><strong>받아줄지는 매도인이 정합니다.</strong> 특히 경매는 서면 확인 없이 못 씁니다.</li>
+      <li><strong>계약금이 없어지는 게 아닙니다.</strong> 셋틀 날 전액 냅니다.</li>
+      <li><strong>셋틀을 못 하면 청구가 옵니다.</strong> 발행사가 대신 낸 돈은 고객이 갚습니다.</li>
+      <li><strong>받아줄지는 매도인·개발사가 정합니다.</strong> 특히 경매는 서면 확인 없이 못 씁니다.</li>
       <li><strong>수수료는 보통 환불되지 않습니다.</strong> 계약이 깨져도 마찬가지입니다.</li>
       <li><strong>기간을 넘기면 연장 비용이 듭니다.</strong> 오프더플랜 지연은 드문 일이 아닙니다.</li>
     </ol>
-    <div class="callout stop" style="margin-top:1.2rem">
+    <div class="callout stop" style="margin-top:1.1rem">
       <span class="k">브로커 자신을 위한 규칙</span>
-      이 다섯 가지는 말로만 하지 말고 <strong>기록으로 남기세요.</strong> 상담 끝나고 문자나 이메일로 요약해서 보내고, 고객 회신을 파일에 보관합니다. 그리고 이 책의 어떤 문장도 개인 맞춤 자문을 대신하지 않습니다. 세금이나 법률 판단은 고객 회계사·변호사에게 넘기세요.
+      말로만 하지 말고 <strong>기록으로 남기세요.</strong> 상담 후 문자나 이메일로 요약해 보내고 고객 회신을 보관합니다. 세금이나 법률 판단은 고객 회계사·변호사에게 넘기세요.
     </div>
   </div>
 </section>
 
-<section id="c12">
+<section id="c11">
   <div class="ch-head">
-    <div class="ch-num">12</div>
+    <div class="ch-num">11</div>
     <div>
       <h2>케이스 여덟</h2>
-      <p class="lede">좋은 점과 걸리는 점을 나란히 놨습니다. <strong>단점을 먼저 말하는 브로커가</strong> 결국 더 팝니다.</p>
+      <p class="lede">좋은 점과 걸리는 점을 나란히. <strong>단점을 먼저 말하는 브로커가</strong> 결국 더 팝니다.</p>
     </div>
   </div>
   <div class="col">
-    <p class="fine">아래 인물과 회사, 숫자는 전부 <strong>설명을 위해 지어낸 것</strong>이고 실제 견적이 아닙니다. 수수료는 숏텀 1.3% 가정의 어림값이고 롱텀은 공식 견적이 필요합니다.</p>
+    <p class="fine">인물과 숫자는 전부 <strong>설명을 위해 지어낸 것</strong>이고 실제 견적이 아닙니다.</p>
   </div>
 
-  <div class="band" style="margin-top:1.1rem">
+  <div class="band" style="margin-top:1rem">
     <div class="tablewrap">
       <table>
-        <caption>여덟 가지를 한눈에</caption>
-        <thead><tr><th>#</th><th>케이스</th><th>유형</th><th>판정</th><th>결국 이걸로 갈립니다</th></tr></thead>
+        <thead><tr><th>#</th><th>케이스</th><th>판정</th><th>결국 이걸로 갈립니다</th></tr></thead>
         <tbody>
-          <tr><td class="num">1</td><td>맞벌이 무자녀 부부의 첫 집</td><td>숏텀</td><td>조건부</td><td>정기예금 만기일과 셋틀 날짜</td></tr>
-          <tr><td class="num">2</td><td>집 팔기 전에 다음 집 계약</td><td>숏텀</td><td>적합</td><td>지금 집에 남은 순자산</td></tr>
-          <tr><td class="num">3</td><td>은퇴 2년 앞두고 오프더플랜</td><td>롱텀</td><td>조건부</td><td>잔금이 대출이 아닌가</td></tr>
-          <tr><td class="num">4</td><td>투자용 4채 보유 투자자</td><td>숏텀</td><td>적합</td><td>잔금 대출이 나오는가</td></tr>
-          <tr><td class="num">5</td><td>첫 주택 구매자와 가족 보증</td><td>숏텀</td><td>조건부</td><td>보증인이 제대로 이해했는가</td></tr>
-          <tr><td class="num">6</td><td>자영업 법인 명의 매수</td><td>숏텀</td><td>적합</td><td>이사 승인과 보증면책서</td></tr>
-          <tr><td class="num">7</td><td>익스체인지는 했는데 셋틀 실패</td><td>사고</td><td>경고</td><td>셋틀 30일 전 대출 재확인</td></tr>
-          <tr><td class="num">8</td><td>계약금을 바로 써야 하는 매도인</td><td>—</td><td>부적합</td><td>매도인이 그 돈을 어디에 쓰나</td></tr>
+          <tr><td class="num">1</td><td>맞벌이 무자녀 부부의 첫 집</td><td>조건부</td><td>정기예금 만기일과 셋틀 날짜</td></tr>
+          <tr><td class="num">2</td><td>집 팔기 전에 다음 집 계약</td><td>적합</td><td>지금 집에 남은 에쿼티</td></tr>
+          <tr><td class="num">3</td><td>은퇴 2년 앞두고 오프더플랜</td><td>조건부</td><td>잔금이 대출이 아닌가</td></tr>
+          <tr><td class="num">4</td><td>투자용 4채 보유 투자자</td><td>적합</td><td>잔금 대출이 나오는가</td></tr>
+          <tr><td class="num">5</td><td>첫 주택 구매자와 가족 보증</td><td>조건부</td><td>보증인이 제대로 이해했는가</td></tr>
+          <tr><td class="num">6</td><td>자영업 법인 명의 매수</td><td>적합</td><td>이사 승인과 보증면책서</td></tr>
+          <tr><td class="num">7</td><td>익스체인지는 했는데 셋틀 실패</td><td>경고</td><td>셋틀 30일 전 대출 재확인</td></tr>
+          <tr><td class="num">8</td><td>계약금을 바로 써야 하는 매도인</td><td>부적합</td><td>그 돈을 어디에 쓰나</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <div class="band" style="margin-top:1.6rem">
+  <div class="band" style="margin-top:1.4rem">
 
     <div class="case">
       <div class="case-head">
@@ -700,24 +629,21 @@
         <span class="verdict cond">조건부</span>
       </div>
       <div class="case-body">
-        <p class="who-line">서준(34)·미나(32) · 합산 세전 $245,000 · 아이 없음 · 예금 $110,000 중 $70,000은 5개월 뒤 만기</p>
-        <div class="field"><div class="lbl">상황</div><div>보고 있는 집이 $1,150,000, 계약금 10%면 <strong>$115,000</strong>입니다. 지금 바로 쓸 수 있는 현금은 $40,000뿐이고 나머지는 정기예금에 들어 있습니다. 인기 지역이라 미루면 물건을 놓칩니다.</div></div>
-        <div class="field"><div class="lbl">설계</div><div>6주 셋틀에 숏텀 본드. 자격은 <strong>경로 A(무조건부 대출 승인)</strong>로 갑니다. 수수료는 <strong>$1,495</strong> 정도. 잔금은 예금 만기 자금에 대출을 더해 맞춥니다.</div></div>
+        <p class="who-line">서준(34)·미나(32) · 합산 세전 $245,000 · 물건 $1,150,000 · 계약금 $115,000 · 현금은 $40,000뿐, $70,000은 5개월 뒤 만기 예금</p>
+        <div class="field"><div class="lbl">설계</div><div>6주 셋틀에 숏텀 본드, 경로 A(무조건부 승인). 수수료 <strong>$1,495</strong> 정도. 잔금은 예금 만기 자금에 대출을 더해 맞춥니다.</div></div>
         <div class="pc">
           <div class="up"><h4>좋은 점</h4><ul>
-            <li>정기예금을 <strong>중도해지하지 않아도</strong> 됩니다. 이 부부에게 파는 건 편의가 아니라 두 숫자의 비교입니다.</li>
-            <li>맞벌이라 대출 심사가 잘 나옵니다. 무조건부 승인이 빨리 떨어지니 자격 통과가 쉽습니다.</li>
-            <li>경쟁이 붙은 물건을 <strong>지금 잡을 수 있습니다.</strong></li>
-            <li>남은 현금 $40,000을 예비비로 들고 갈 수 있습니다.</li>
+            <li>정기예금을 <strong>중도해지하지 않아도</strong> 됩니다.</li>
+            <li>맞벌이라 승인이 빨리 떨어져 자격 통과가 쉽습니다.</li>
+            <li>경쟁 붙은 물건을 지금 잡고, 현금 $40,000은 예비비로 남습니다.</li>
           </ul></div>
           <div class="down"><h4>걸리는 점</h4><ul>
-            <li><strong>예금 만기가 셋틀보다 늦으면 설계 자체가 무너집니다.</strong> 날짜 대조가 1순위입니다.</li>
-            <li>중도해지 손해가 $1,495보다 작으면 본드가 오히려 손해입니다. 계산해 보고 아니면 팔지 마세요.</li>
-            <li>아이 계획이 있으면 소득이 줄어서 <strong>대출 규모부터</strong> 다시 봐야 합니다. 본드와 별개 문제입니다.</li>
-            <li>매도인이 거절하면 소용없습니다. 미리 확인해야 합니다.</li>
+            <li><strong>예금 만기가 셋틀보다 늦으면 설계가 무너집니다.</strong> 날짜 대조가 1순위.</li>
+            <li>중도해지 손해가 $1,495보다 작으면 본드가 손해입니다. 계산해 보고 아니면 팔지 마세요.</li>
+            <li>아이 계획이 있으면 소득이 줄어 대출 규모부터 다시 봐야 합니다.</li>
           </ul></div>
         </div>
-        <div class="callout"><span class="k">이렇게 말합니다</span>"정기예금 깨면 얼마나 손해나는지 먼저 확인해 보시겠어요? 그 금액이 1,495불보다 크면 본드가 이깁니다. 작으면 제가 권해드리지 않을게요."</div>
+        <div class="callout"><span class="k">이렇게 말합니다</span>"정기예금 깨면 얼마 손해나는지 먼저 확인해 보시겠어요? 1,495불보다 크면 본드가 이깁니다. 작으면 제가 권해드리지 않을게요."</div>
       </div>
     </div>
 
@@ -727,21 +653,18 @@
         <span class="verdict fit">적합</span>
       </div>
       <div class="case-body">
-        <p class="who-line">시드니 서부 40대 부부 · 지금 사는 집 $1.1M(대출 $380k 남음) · 보고 있는 집 $980,000</p>
-        <div class="field"><div class="lbl">상황</div><div>계약금 $98,000이 지금 현금으로 없습니다. 살던 집은 아직 시장에 내놓기 전이고요.</div></div>
-        <div class="field"><div class="lbl">설계</div><div>6주 셋틀에 숏텀 본드, 자격은 <strong>경로 B(지금 집의 순자산)</strong>. 수수료 <strong>$1,270</strong> 정도.</div></div>
+        <p class="who-line">시드니 서부 40대 부부 · 사는 집 $1.1M(대출 $380k) · 새 물건 $980,000 · 계약금 $98,000</p>
+        <div class="field"><div class="lbl">설계</div><div>6주 셋틀, 경로 B(지금 집의 에쿼티). 밸류에이션은 RP Data로 확인, 없으면 우리가 뽑습니다. 수수료 <strong>$1,270</strong> 정도.</div></div>
         <div class="pc">
           <div class="up"><h4>좋은 점</h4><ul>
-            <li>살던 집을 <strong>급하게 던지지 않아도</strong> 됩니다. 이 여유가 수수료보다 훨씬 큽니다.</li>
-            <li>담보를 안 묶으니 브릿징 대출보다 구조가 단순하고 빠릅니다.</li>
-            <li>순자산으로 심사하니 서류가 가볍습니다.</li>
-            <li>본드 한 건이 바로 새 대출과 재융자 상담으로 이어집니다.</li>
+            <li>살던 집을 <strong>급하게 던지지 않아도</strong> 됩니다. 이 여유가 수수료보다 큽니다.</li>
+            <li>담보를 안 묶으니 브릿징보다 단순하고 빠릅니다.</li>
+            <li>본드 한 건이 바로 새 대출·재융자 상담으로 이어집니다.</li>
           </ul></div>
           <div class="down"><h4>걸리는 점</h4><ul>
-            <li>살던 집이 늦게 팔리거나 싸게 팔리면 <strong>잔금 문제는 그대로</strong> 남습니다.</li>
-            <li>브릿징 대출까지 같이 쓰면 비용이 이중으로 나갑니다.</li>
-            <li>계약이 깨져도 수수료는 안 돌아옵니다.</li>
-            <li>두 거래의 셋틀 날짜가 어긋나면 본드 기간을 다시 짜야 합니다.</li>
+            <li>살던 집이 늦게 또는 싸게 팔리면 <strong>잔금 문제는 그대로</strong>입니다.</li>
+            <li>브릿징까지 같이 쓰면 비용이 이중입니다.</li>
+            <li>두 거래의 셋틀 날짜가 어긋나면 기간을 다시 짜야 합니다.</li>
           </ul></div>
         </div>
       </div>
@@ -753,26 +676,23 @@
         <span class="verdict cond">조건부</span>
       </div>
       <div class="case-body">
-        <p class="who-line">정우(63) · 2년 뒤 은퇴 예정 · 지금 소득 $135,000 · 슈퍼 $520,000 · 사는 집 $1.4M(대출 없음)</p>
-        <div class="field"><div class="lbl">상황</div><div>집을 줄여 가려고 오프더플랜 $980,000을 계약하려 합니다. 계약금 <strong>$98,000</strong>, 완공까지 26개월. 계산해 보면 <strong>셋틀이 은퇴하고 두 달 뒤</strong>입니다.</div></div>
-        <div class="field"><div class="lbl">핵심</div><div>계약은 <strong>일하고 있는 지금</strong> 하는데 셋틀은 <strong>소득이 끊긴 뒤</strong>에 합니다. 지금 받은 사전승인은 26개월 뒤에 아무 소용이 없고 그때 다시 심사받습니다. 대출 기간이 은퇴 이후로 넘어가면 은행은 <strong>출구 전략(exit strategy)</strong>을 문서로 요구합니다.</div></div>
-        <div class="field"><div class="lbl">설계</div><div>계약서 sunset date에 여유를 더해 <strong>36개월 롱텀</strong>으로 잡습니다. 잔금은 <strong>대출 말고</strong> 지금 집 매각 대금이나 슈퍼 인출로 준비한다는 계획을 문서로 남깁니다. 슈퍼 인출 시점과 세금은 회계사 몫입니다.</div></div>
+        <p class="who-line">정우(63) · 2년 뒤 은퇴 · 소득 $135,000 · 슈퍼 $520,000 · 사는 집 $1.4M(무대출) · 오프더플랜 $980,000, 완공 26개월</p>
+        <div class="field"><div class="lbl">핵심</div><div>계약은 <strong>일하는 지금</strong> 하는데 셋틀은 <strong>은퇴 두 달 뒤</strong>입니다. 지금 사전승인은 그때 소용없고 다시 심사받습니다. 대출이 은퇴 이후로 넘어가면 은행은 출구 전략을 문서로 요구합니다.</div></div>
+        <div class="field"><div class="lbl">설계</div><div>sunset date에 여유를 더해 36개월로 잡습니다. 어차피 셋틀이 당겨지면 언제든 정리됩니다. 잔금은 <strong>대출 말고</strong> 집 매각 대금이나 슈퍼로 준비한다는 계획을 문서로 남깁니다.</div></div>
         <div class="pc">
           <div class="up"><h4>좋은 점</h4><ul>
-            <li>$98,000을 26개월 동안 개발사 신탁계좌에 묶지 않습니다. 연 5%로만 잡아도 <strong>1만 달러쯤</strong> 차이입니다.</li>
-            <li>은퇴를 앞둔 시기에 <strong>현금을 손에 쥐고 있을 수 있습니다.</strong> 이 나이대에는 그 자체가 방어막입니다.</li>
+            <li>$98,000을 26개월 묶지 않습니다. 연 5%로만 잡아도 <strong>1만 달러</strong> 차이.</li>
+            <li>은퇴를 앞두고 <strong>현금을 손에 쥐고</strong> 갑니다. 이 나이대엔 그게 방어막입니다.</li>
             <li>슈퍼를 미리 헐 필요도, 지금 집을 서둘러 팔 필요도 없습니다.</li>
-            <li>롱텀은 <strong>숫자만으로 설득이 끝나는</strong> 구간입니다.</li>
           </ul></div>
           <div class="down"><h4>걸리는 점</h4><ul>
-            <li><strong>셋틀할 때 소득이 없습니다.</strong> 대출로 잔금을 치를 생각이면 이 책에서 제일 위험한 케이스입니다.</li>
-            <li>완공이 밀려서 은퇴 후로 더 가면 <strong>연장 수수료</strong>까지 붙고 상황은 더 나빠집니다.</li>
-            <li>완공 시점 감정가가 계약가보다 낮게 나오면 그 차액만큼 <strong>현금이 더</strong> 필요합니다.</li>
-            <li>잘못되면 청구가 <strong>은퇴 자산</strong>으로 갑니다. 다시 벌어서 메울 시간이 없습니다.</li>
-            <li>26개월 뒤의 건강이나 가족 상황은 아무도 장담 못 합니다.</li>
+            <li><strong>셋틀할 때 소득이 없습니다.</strong> 대출로 잔금을 칠 생각이면 제일 위험한 케이스입니다.</li>
+            <li>완공이 밀리면 연장 수수료까지 붙고 상황이 더 나빠집니다.</li>
+            <li>완공 시 감정가가 계약가보다 낮으면 그만큼 <strong>현금이 더</strong> 필요합니다.</li>
+            <li>잘못되면 청구가 <strong>은퇴 자산</strong>으로 갑니다. 메울 시간이 없습니다.</li>
           </ul></div>
         </div>
-        <div class="callout warn"><span class="k">이 케이스의 규칙</span>잔금 계획이 <strong>"그때 대출 받으면 되죠"</strong>면 진행하지 마세요. 집을 팔거나 슈퍼로 낸다는 계획이 문서로 남을 때만 발행합니다. 그리고 슈퍼를 언제 얼마나 뺄 수 있는지, 세금이 어떻게 되는지는 회계사나 재무설계사에게 넘기세요. 브로커가 답할 영역이 아닙니다.</div>
+        <div class="callout warn"><span class="k">이 케이스의 규칙</span>잔금 계획이 <strong>"그때 대출 받으면 되죠"</strong>면 진행하지 마세요. 슈퍼를 언제 얼마나 뺄 수 있는지와 세금은 회계사에게 넘깁니다.</div>
       </div>
     </div>
 
@@ -782,24 +702,21 @@
         <span class="verdict fit">적합</span>
       </div>
       <div class="case-body">
-        <p class="who-line">현우(48) · 투자용 4채 합쳐 $4.2M · 대출 $2.6M · 자산은 넉넉하고 현금흐름은 빠듯 · 다섯 번째 물건 $850,000</p>
-        <div class="field"><div class="lbl">상황</div><div>계약금 $85,000. 재융자로 에쿼티를 빼려면 3~6주가 걸리는데, 물건은 이번 주에 계약해야 합니다.</div></div>
-        <div class="field"><div class="lbl">설계</div><div>경로 B(순자산)로 숏텀 본드, 수수료 <strong>$1,105</strong> 정도. 잔금은 재융자 자금에 새 대출을 더해 맞춥니다.</div></div>
+        <p class="who-line">현우(48) · 4채 합쳐 $4.2M, 대출 $2.6M · 자산은 넉넉, 현금흐름은 빠듯 · 다섯 번째 물건 $850,000</p>
+        <div class="field"><div class="lbl">설계</div><div>재융자로 에쿼티를 빼려면 3~6주가 걸리는데 물건은 이번 주에 계약해야 합니다. 경로 B로 숏텀, 수수료 <strong>$1,105</strong> 정도.</div></div>
         <div class="pc">
           <div class="up"><h4>좋은 점</h4><ul>
-            <li>재융자를 기다리지 않고 <strong>계약 타이밍을 잡습니다.</strong> 투자자에게는 이게 전부입니다.</li>
-            <li>기존 대출 구조를 안 건드리니 <strong>교차담보를 더 늘리지 않습니다.</strong> 나중에 한 채 팔 때 은행 동의를 받아야 하는 상황을 안 만드는 거죠.</li>
-            <li>현금흐름 여유를 남겨둔 채로 채수를 늘립니다.</li>
-            <li>여러 건을 굴리는 투자자에게는 계속 반복되는 상품이 됩니다.</li>
+            <li>재융자를 기다리지 않고 <strong>계약 타이밍을 잡습니다.</strong></li>
+            <li>기존 대출 구조를 안 건드리니 <strong>교차담보를 더 늘리지 않습니다.</strong></li>
+            <li>현금흐름 여유를 남긴 채 채수를 늘립니다. 반복 거래가 됩니다.</li>
           </ul></div>
           <div class="down"><h4>걸리는 점</h4><ul>
-            <li><strong>본드가 대출을 만들어 주지는 않습니다.</strong> 다주택자는 대출 여력 제약이 제일 큰 집단이고, 잔금 대출이 막히면 곧장 사고로 갑니다.</li>
-            <li>고부채 대출을 조이는 국면이라 진행 전에 <strong>지금 기준으로 대출 여력을 다시</strong> 확인해야 합니다.</li>
-            <li>동시에 여러 건을 돌리면 <strong>만기 관리</strong>가 일이 됩니다.</li>
-            <li>법인이나 트러스트 명의면 이사 승인과 보증·면책서가 추가됩니다.</li>
+            <li><strong>본드가 대출을 만들어 주지는 않습니다.</strong> 잔금 대출이 막히면 곧장 사고입니다.</li>
+            <li>고부채 대출을 조이는 국면이라 지금 기준으로 여력을 다시 확인해야 합니다.</li>
+            <li>여러 건을 동시에 돌리면 만기 관리가 일이 됩니다.</li>
           </ul></div>
         </div>
-        <div class="callout"><span class="k">순서를 바꾸세요</span>이 고객은 <strong>본드보다 잔금 대출을 먼저</strong> 확인합니다. 대출이 나온다는 게 확인된 다음에야 본드가 좋은 도구가 됩니다.</div>
+        <div class="callout"><span class="k">순서를 바꾸세요</span>이 고객은 <strong>본드보다 잔금 대출을 먼저</strong> 확인합니다.</div>
       </div>
     </div>
 
@@ -809,21 +726,20 @@
         <span class="verdict cond">조건부</span>
       </div>
       <div class="case-body">
-        <p class="who-line">20대 후반 단독 매수 · 예금 $60,000 · 보고 있는 집 $780,000 · 부모님이 순자산 있는 집 보유</p>
-        <div class="field"><div class="lbl">설계</div><div>계약금 $78,000. 혼자서는 심사가 어려워 부모님이 <strong>보증인</strong>으로 들어가고, 대출은 무조건부 승인을 먼저 받아둡니다(경로 A).</div></div>
+        <p class="who-line">20대 후반 단독 매수 · 예금 $60,000 · 물건 $780,000 · 계약금 $78,000 · 부모님이 에쿼티 있는 집 보유</p>
+        <div class="field"><div class="lbl">설계</div><div>혼자서는 심사가 어려워 부모님이 보증인으로 들어갑니다. <strong>부모님 집 밸류에이션</strong>은 RP Data나 우리 쪽 자료로 맞추고, 대출은 무조건부 승인을 먼저 받습니다.</div></div>
         <div class="pc">
           <div class="up"><h4>좋은 점</h4><ul>
             <li>자격이 안 되던 고객을 <strong>계약할 수 있는 상태</strong>로 만듭니다.</li>
-            <li>본드 자체는 담보를 안 잡으니 부모님 집에 근저당이 잡히지는 않습니다.</li>
-            <li>부모님 세대 재융자 상담으로 자연스럽게 이어집니다.</li>
+            <li>본드는 담보를 안 잡으니 부모님 집에 근저당이 잡히진 않습니다.</li>
+            <li>부모님 세대 재융자 상담으로 이어집니다.</li>
           </ul></div>
           <div class="down"><h4>걸리는 점</h4><ul>
             <li>보증인은 <strong>법적 책임을 집니다.</strong> 잘못되면 청구가 가족 관계로 번집니다.</li>
-            <li>보증을 섰다는 사실이 부모님의 <strong>향후 대출 여력</strong>에 영향을 줄 수 있습니다.</li>
-            <li>내용을 제대로 모른 채 서명하면 나중에 반드시 문제가 됩니다.</li>
+            <li>보증 사실이 부모님 <strong>향후 대출 여력</strong>에 영향을 줄 수 있습니다.</li>
+            <li>내용을 모른 채 서명하면 나중에 반드시 문제가 됩니다. <strong>변호사 상담을 권하고 기록에 남기세요.</strong></li>
           </ul></div>
         </div>
-        <div class="callout warn"><span class="k">빠뜨리면 안 되는 절차</span>보증인에게 <strong>따로 변호사 상담을 받으시라고</strong> 권하고, 권했다는 사실을 기록에 남기세요.</div>
       </div>
     </div>
 
@@ -834,18 +750,17 @@
       </div>
       <div class="case-body">
         <p class="who-line">요식업 법인 대표(45) · 상업용 물건 $1,300,000 · 계약금 $130,000 · 운전자금 $200,000</p>
-        <div class="field"><div class="lbl">설계</div><div>법인 명의로 신청합니다. 이사 승인과 <strong>보증·면책서</strong>를 미리 준비하고, 수수료는 <strong>$1,690</strong> 정도.</div></div>
+        <div class="field"><div class="lbl">설계</div><div>법인 명의 신청. 이사 승인과 보증·면책서를 미리 준비합니다. 수수료 <strong>$1,690</strong> 정도.</div></div>
         <div class="pc">
           <div class="up"><h4>좋은 점</h4><ul>
-            <li>운전자금 $200,000을 <strong>사업에 그대로 둡니다.</strong> 계약금으로 빼면 성수기 재고와 급여가 흔들립니다.</li>
-            <li>주거용이든 상업용이든 신청할 수 있어서 사업장 매수에도 씁니다.</li>
-            <li>회계연도나 현금흐름 주기에 맞춰 셋틀 시점을 설계할 수 있습니다.</li>
+            <li>운전자금 $200,000을 <strong>사업에 그대로 둡니다.</strong></li>
+            <li>주거용·상업용 모두 되니 사업장 매수에도 씁니다.</li>
+            <li>현금흐름 주기에 맞춰 셋틀 시점을 설계할 수 있습니다.</li>
           </ul></div>
           <div class="down"><h4>걸리는 점</h4><ul>
-            <li>서류가 늘어납니다. 이사 승인, 보증·면책서, 법인 재무자료까지.</li>
-            <li>사실상 <strong>대표 개인이 책임을 집니다.</strong> 법인이라고 책임이 끊기지 않습니다.</li>
+            <li>서류가 늘어납니다. 이사 승인, 보증·면책서, 법인 재무자료.</li>
+            <li>사실상 <strong>대표 개인이 책임을 집니다.</strong></li>
             <li>자영업 소득은 대출 심사에서 보수적으로 봅니다. 진짜 관문은 잔금 대출입니다.</li>
-            <li>승인까지 더 걸리니 계약 예정일에 여유가 필요합니다.</li>
           </ul></div>
         </div>
       </div>
@@ -857,36 +772,30 @@
         <span class="verdict no">경고</span>
       </div>
       <div class="case-body">
-        <p class="who-line">지훈(41) · 계약가 $1,050,000 · 계약금 $105,000을 디파짓 본드로 대체 · 6주 셋틀</p>
-        <div class="field"><div class="lbl">발단</div><div>셋틀 2주 전 최종 심사에서 <strong>감정가가 $985,000으로 나왔고</strong>, 계약 후에 올린 신용카드 한도 때문에 승인 금액까지 줄었습니다. 셋틀 날 기준으로 <strong>$80,000이 모자랍니다.</strong></div></div>
+        <p class="who-line">지훈(41) · 계약가 $1,050,000 · 계약금 $105,000을 본드로 대체 · 셋틀 2주 전 감정가가 $985,000으로 나오고 카드 한도 증액까지 겹쳐 <strong>$80,000 부족</strong></p>
         <div class="field"><div class="lbl">전개</div><div>
           <div class="flow" style="margin-top:.2rem">
-            <div class="step"><div><h4>셋틀 날 이행 못 함</h4><p>매도인은 계약서에 정해진 대로 <strong>지연이자</strong>를 물립니다. 호주 표준 계약에서 보통 연 6~12% 수준으로 잡힙니다.</p></div></div>
-            <div class="step"><div><h4>Notice to Complete 도착</h4><p>매도인이 이행 최고장을 보내 <strong>추가 기한(NSW 표준계약이면 보통 14일)</strong>을 줍니다. 이때부터는 기한을 지키는 것 자체가 계약의 핵심 조건이 됩니다.</p></div></div>
-            <div class="step"><div><h4>계약 해제</h4><p>그 기한 안에도 못 하면 매도인은 계약을 해제하고 <strong>계약금을 가져갈 수</strong> 있습니다.</p></div></div>
-            <div class="step"><div><h4>보증서에 청구</h4><p>현금 계약금이 없으니 매도인은 <strong>보증서에 청구</strong>합니다. 유효한 청구로 판단되면 발행사가 매도인에게 $105,000을 지급합니다.</p></div></div>
-            <div class="step"><div><h4>구상</h4><p>발행사는 그 <strong>$105,000을 지훈에게 청구</strong>합니다. 안 갚으면 법적 회수 절차로 넘어갑니다.</p></div></div>
-            <div class="step"><div><h4>손해배상까지</h4><p>매도인은 지연이자와 비용에 더해, 해제하고 다시 팔았는데 손해가 났다면 <strong>그 차액까지</strong> 청구할 수 있습니다(NSW 표준계약 기준 해제 후 12개월 내 재매각 손실 등).</p></div></div>
+            <div class="step"><div><h4>셋틀 불이행 → 지연이자</h4><p>계약서에 정해진 요율로 물립니다. 호주 표준 계약에서 보통 연 6~12% 수준.</p></div></div>
+            <div class="step"><div><h4>Notice to Complete</h4><p>이행 최고장으로 추가 기한(NSW 표준계약이면 보통 14일)을 줍니다. 이때부터 기한이 계약의 핵심 조건이 됩니다.</p></div></div>
+            <div class="step"><div><h4>해제 · 보증 청구</h4><p>그 안에도 못 하면 계약이 해제되고, 현금 계약금이 없으니 상대는 <strong>보증서에 청구</strong>합니다. 유효하면 발행사가 $105,000을 지급합니다.</p></div></div>
+            <div class="step"><div><h4>구상 · 손해배상</h4><p>발행사는 그 돈을 <strong>지훈에게 청구</strong>하고, 안 갚으면 법적 회수로 갑니다. 여기에 지연이자와 재매각 손실까지 더 붙을 수 있습니다.</p></div></div>
           </div>
         </div></div>
         <div class="pc">
           <div class="up"><h4>그래도 본드라서 나았던 점</h4><ul>
-            <li>셋틀 전까지 6주 동안 $105,000이 <strong>묶여 있지 않았습니다.</strong> 그 현금이 손에 있었기 때문에 모자란 돈을 메우거나 셋틀 연장을 협상해 볼 <strong>여지</strong>가 있었습니다.</li>
-            <li>현금으로 넣었으면 그 돈은 이미 신탁계좌에 들어가 있어서 급할 때 쓰지도 못합니다.</li>
-            <li>정리하면 본드는 <strong>대응할 시간을 벌어주는</strong> 정도지, 손실을 없애지는 못합니다.</li>
+            <li>셋틀 전까지 $105,000이 <strong>묶여 있지 않았습니다.</strong> 그 현금이 손에 있어 모자란 돈을 메우거나 연장을 협상할 <strong>여지</strong>가 있었습니다.</li>
+            <li>현금으로 넣었으면 그 돈은 이미 신탁계좌에 있어 급할 때 못 씁니다.</li>
           </ul></div>
           <div class="down"><h4>그래도 남는 손해</h4><ul>
             <li>계약금만큼인 <strong>$105,000 빚</strong>이 발행사에게 그대로 생깁니다.</li>
-            <li>지연이자에 최고장 비용, 재매각 손실까지 붙으면 <strong>계약금보다 커집니다.</strong></li>
-            <li>안 갚으면 법적 추심으로 가고, 앞으로 대출받을 때도 발목을 잡습니다.</li>
-            <li>고객이 "본드였으니 그냥 없던 일 되는 거 아니었어요?"라고 하면 <strong>설명 책임이 브로커에게</strong> 돌아옵니다.</li>
+            <li>지연이자·비용·재매각 손실까지 붙으면 <strong>계약금보다 커집니다.</strong></li>
+            <li>고객이 "본드였으니 없던 일 되는 거 아니었어요?"라고 하면 <strong>설명 책임은 브로커에게</strong> 옵니다.</li>
           </ul></div>
         </div>
-        <p class="fine">위 절차와 기한은 NSW 표준 매매계약을 기준으로 한 일반적인 흐름이고, <strong>주(state)와 개별 계약 조항에 따라 달라집니다.</strong> 실제 상황에서는 반드시 고객 변호사나 컨베이언서 판단을 따르세요.</p>
         <div class="callout stop"><span class="k">모든 건에 적용하는 예방 다섯 줄</span>
-          ① 셋틀 <strong>30일, 14일, 7일</strong> 전에 대출이 그대로 나오는지 다시 확인한다. ② 오프더플랜과 많이 오른 지역은 <strong>감정가가 낮게 나올 걸</strong> 전제로 여유를 잡는다. ③ 계약하고 셋틀할 때까지 <strong>새 카드나 한도 증액, 할부</strong>를 만들지 말라고 문자로 남겨 둔다. ④ 계약금의 <strong>10~20%는 예비자금</strong>으로 남겨두게 한다. ⑤ 낌새가 보이면 바로 매도인 쪽과 <strong>연장 협상</strong>에 들어간다. 최고장이 올 때까지 기다리지 않는다.
+          ① 셋틀 <strong>30일·14일·7일</strong> 전 대출을 다시 확인한다. ② 오프더플랜과 많이 오른 지역은 <strong>감정가가 낮게 나올 걸</strong> 전제로 잡는다. ③ 계약 후 <strong>새 카드나 한도 증액, 할부</strong>를 만들지 말라고 문자로 남긴다. ④ 계약금의 <strong>10~20%는 예비자금</strong>으로 남기게 한다. ⑤ 낌새가 보이면 최고장을 기다리지 말고 바로 <strong>연장 협상</strong>에 들어간다.
         </div>
-        <div class="callout"><span class="k">이래서 첫 통화에서 잔금부터 묻습니다</span>우리가 파는 건 보증서가 아니라 <strong>탈 없이 끝나는 셋틀</strong>입니다.</div>
+        <p class="fine">절차와 기한은 NSW 표준 매매계약 기준이고 <strong>주와 계약마다 다릅니다.</strong> 실제 상황에서는 고객 변호사·컨베이언서 판단을 따르세요.</p>
       </div>
     </div>
 
@@ -896,17 +805,16 @@
         <span class="verdict no">부적합</span>
       </div>
       <div class="case-body">
-        <p class="who-line">둘 다 매수인 자격과 상관없이 본드가 작동하지 않는 상황입니다.</p>
-        <div class="field"><div class="lbl">상황 A</div><div>매도인이 그 계약금을 <strong>미리 빼서 다음 집 계약금으로 쓰려는</strong> 경우. 보증서는 현금이 아니라서 매도인이 원하는 걸 해주지 못합니다. 이럴 땐 현금 계약금이나 브릿징으로 설계를 바꿔야 합니다.</div></div>
-        <div class="field"><div class="lbl">상황 B</div><div><strong>경매.</strong> 조건 없이 바로 계약이라 보통 현금 계약금을 요구합니다. 매도인 쪽 <strong>서면 동의가 없으면 못 쓴다</strong>고 보고, 확인 전에는 절대 입찰하지 않게 하세요.</div></div>
+        <div class="field"><div class="lbl">상황 A</div><div>매도인이 그 계약금을 <strong>미리 빼서 다음 집 계약금으로 쓰려는</strong> 경우. 보증서는 현금이 아니라 그 필요를 못 채웁니다. 현금 계약금이나 브릿징으로 설계를 바꾸세요.</div></div>
+        <div class="field"><div class="lbl">상황 B</div><div><strong>경매.</strong> 조건 없이 바로 계약이라 보통 현금을 요구합니다. <strong>서면 동의 없으면 못 쓴다</strong>고 보고, 확인 전에는 절대 입찰하지 않게 하세요.</div></div>
         <div class="pc">
           <div class="up"><h4>그래도 남는 기회</h4><ul>
-            <li>본드가 안 되는 건이라고 상담이 끝나는 건 아닙니다. <strong>브릿징, 재융자, 대출 사전승인</strong>으로 넘어가면 됩니다.</li>
-            <li>경매 고객은 <strong>무조건부 승인</strong> 수요가 큽니다. 더 큰 거래로 이어집니다.</li>
+            <li>본드가 안 된다고 상담이 끝나는 건 아닙니다. <strong>브릿징, 재융자, 사전승인</strong>으로 넘어갑니다.</li>
+            <li>경매 고객은 <strong>무조건부 승인</strong> 수요가 커서 더 큰 거래가 됩니다.</li>
           </ul></div>
           <div class="down"><h4>하면 안 되는 것</h4><ul>
-            <li>매도인이 받아줄 거라고 <strong>넘겨짚고</strong> 발행하는 것. 수수료는 안 돌아옵니다.</li>
-            <li>"경매에서도 대부분 받아줍니다" 같은 말. 사실이 아니고 낙찰 현장에서 계약이 깨집니다.</li>
+            <li>받아줄 거라고 <strong>넘겨짚고</strong> 발행하는 것. 수수료는 안 돌아옵니다.</li>
+            <li>"경매에서도 대부분 받아줍니다" 같은 말. 낙찰 현장에서 계약이 깨집니다.</li>
           </ul></div>
         </div>
       </div>
@@ -915,62 +823,21 @@
   </div>
 </section>
 
-<section id="c13">
+<section id="c12">
   <div class="ch-head">
-    <div class="ch-num">13</div>
+    <div class="ch-num">12</div>
     <div>
       <h2>리드 받고 발행까지</h2>
-      <p class="lede">디파짓 본드는 <strong>속도로 파는 상품</strong>입니다. 리드가 식으면 계약 자리도 지나갑니다.</p>
+      <p class="lede">24시간이면 나오는 상품입니다. 느린 건 우리 쪽 대응 속도뿐입니다.</p>
     </div>
   </div>
   <div class="col">
-    <p>메타(페이스북·인스타그램) 리드 광고로 들어온 문의는 접수되자마자 담당자 휴대폰으로 문자가 가고, <strong>10분 안에 첫 통화</strong>가 나가는 걸 기준으로 잡습니다. 광고 문구는 상품 이름 대신 상황으로 씁니다. "디파짓 본드 문의"보다 <strong>"지금 집 팔기 전에 다음 집 계약하고 싶으세요?"</strong>가 1번 유형을 정확히 데려옵니다.</p>
-    <div class="flow" style="margin-top:1.1rem">
-      <div class="step"><div><h4>리드 접수</h4><p>광고 폼이 제출되면 웹훅으로 바로 들어옵니다. 폼 항목은 최소로. 이름, 연락처, 셋틀 시기, 물건 유무면 충분합니다.</p></div></div>
-      <div class="step"><div><h4>문자 알림</h4><p>담당자 휴대폰으로 바로 발송합니다. 어느 광고에서 온 리드인지 같이 실어 통화 전에 파악하게 합니다.</p></div></div>
-      <div class="step"><div><h4>10분 안에 첫 통화</h4><p>7장 스크립트로 세 가지를 확인하고 숏텀인지 롱텀인지 가릅니다.</p></div></div>
-      <div class="step"><div><h4>당일 견적 문자</h4><p>공식 견적 금액에 11장의 다섯 가지를 요약해서 같이 보냅니다. 기록이 남습니다.</p></div></div>
-      <div class="step"><div><h4>매도인 수용 확인</h4><p>고객이 에이전트나 변호사에게 확인합니다. 필요하면 발행사 소개 자료를 매도인 쪽에 직접 보냅니다.</p></div></div>
-      <div class="step"><div><h4>신청과 발행</h4><p>Broker Hub에서 10분이면 신청됩니다. 계약서와 보증서의 이름, 주소, 금액, 만기일을 맞춰보고 제출합니다.</p></div></div>
-    </div>
-    <div class="callout" style="margin-top:1.2rem">
+    <p>메타 리드 광고로 문의가 들어오면 담당자 휴대폰으로 바로 문자가 가고, <strong>10분 안에 첫 통화</strong>가 나가는 걸 기준으로 잡습니다. 광고 문구는 상품 이름 대신 상황으로 씁니다. "디파짓 본드 문의"보다 <strong>"지금 집 팔기 전에 다음 집 계약하고 싶으세요?"</strong>가 1번 유형을 정확히 데려옵니다.</p>
+    <p style="margin-top:.7rem">리드 접수 → 문자 알림 → 10분 내 통화(6장 스크립트) → 당일 견적 문자에 10장 다섯 가지 요약 첨부 → 상대방 수용 확인 → Broker Hub 신청, 24시간 내 발행.</p>
+    <div class="callout" style="margin-top:1rem">
       <span class="k">볼 숫자는 네 개면 충분합니다</span>
-      리드 받고 첫 통화까지 걸린 시간, 통화한 것 중 견적 보낸 비율, 견적 보낸 것 중 발행된 비율, 발행한 것 중 대출 상담으로 이어진 비율. <strong>마지막 숫자가 이 상품을 하는 진짜 이유</strong>입니다.
+      리드에서 첫 통화까지 걸린 시간, 통화한 것 중 견적 보낸 비율, 견적 중 발행된 비율, 발행 중 대출 상담으로 이어진 비율. <strong>마지막 숫자가 이 상품을 하는 진짜 이유</strong>입니다.
     </div>
-  </div>
-</section>
-
-<section id="c14">
-  <div class="ch-head">
-    <div class="ch-num">14</div>
-    <div>
-      <h2>고객이 제일 많이 묻는 20가지</h2>
-      <p class="lede">통화 중에 검색하지 않고 답하려고 압축해 둔 것들.</p>
-    </div>
-  </div>
-  <div class="col">
-    <ol>
-      <li><strong>계약금 전부를 대신할 수 있나요?</strong> 보통 10% 전액을 대체하고, 계약 조건에 따라 일부만도 됩니다.</li>
-      <li><strong>받는 데 얼마나 걸려요?</strong> 숏텀은 거의 바로에서 당일, 롱텀은 서류에 따라 보통 하루 안입니다.</li>
-      <li><strong>신청은 누가 하나요?</strong> 본인이 직접 하거나 인증받은 브로커, 컨베이언서, 대출기관을 통해서 합니다.</li>
-      <li><strong>제일 길게는 얼마까지 돼요?</strong> 롱텀 기준 48개월까지입니다.</li>
-      <li><strong>수수료는 언제 내요?</strong> 발행할 때 한 번. 그 뒤로 이자나 관리비는 없습니다.</li>
-      <li><strong>중간에 취소하면요?</strong> 보통 환불되지 않습니다.</li>
-      <li><strong>상가나 사무실도 되나요?</strong> 주거용, 상업용 모두 신청할 수 있습니다.</li>
-      <li><strong>법인 명의도 되나요?</strong> 됩니다. 대신 이사 승인과 보증·면책서가 필요합니다.</li>
-      <li><strong>공동명의인데 배우자가 신청 안 하면요?</strong> 그 공동명의자가 보증인으로 요구될 수 있습니다.</li>
-      <li><strong>영주권이 없으면요?</strong> 시민권·영주권 요건이 있어서 미리 확인해야 합니다.</li>
-      <li><strong>대출 승인 전에도 되나요?</strong> 경로에 따라 다릅니다. 갖고 계신 집에 순자산이 있으면 가능성이 높습니다.</li>
-      <li><strong>매도인이 계약금을 미리 쓰고 싶어 해요.</strong> 그러면 본드는 안 맞습니다. 현금 계약금으로 설계를 바꾸세요.</li>
-      <li><strong>경매에서 쓸 수 있어요?</strong> 서면 동의 없이는 못 쓴다고 보는 게 안전합니다.</li>
-      <li><strong>보증서를 잃어버리면요?</strong> 전자 발행이라 재발급 요청이 됩니다.</li>
-      <li><strong>셋틀이 당겨지면요?</strong> 문제없습니다. 만기 전에 끝나는 건 정상입니다.</li>
-      <li><strong>셋틀이 밀리면요?</strong> 만기 전에 연장 신청을 해야 하고 수수료가 붙습니다.</li>
-      <li><strong>이거 쓰면 대출 심사에 불리해요?</strong> 본드 자체가 대출은 아니지만, 심사에서는 잔금 계획 전체를 봅니다. 두 건은 같이 설계해야 합니다.</li>
-      <li><strong>보증서는 누가 갖고 있어요?</strong> 매도인 쪽(에이전트나 변호사)이 보관하고, 셋틀되면 돌려주거나 소멸 처리합니다.</li>
-      <li><strong>세금 처리는 어떻게 되나요?</strong> 투자용이면 수수료 처리 방식이 달라질 수 있습니다. 회계사에게 확인하시라고 안내하세요.</li>
-      <li><strong>회사는 믿을 만한가요?</strong> 1989년 설립된 호주 최초 제공사고, 보증은 S&amp;P AA− 등급 보험사가 섭니다.</li>
-    </ol>
   </div>
 </section>
 
@@ -978,30 +845,43 @@
   <div class="ch-head">
     <div class="ch-num">A</div>
     <div>
-      <h2>한국어-영어 용어 정리</h2>
-      <p class="lede">고객은 한국어로 이해하지만 서류와 변호사는 영어로 말합니다. 둘 다 쓰세요.</p>
+      <h2>용어와 빠른 답변</h2>
+      <p class="lede">고객은 한국어로 이해하지만 서류와 변호사는 영어로 말합니다.</p>
     </div>
   </div>
-  <div style="max-width:46rem">
+  <div class="band">
     <div class="tablewrap">
       <table>
         <thead><tr><th>영어</th><th>현장에서 쓰는 말</th><th>메모</th></tr></thead>
         <tbody>
-          <tr><td>Deposit Bond / Deposit Guarantee</td><td>디파짓 본드, 계약금 보증서</td><td>같은 상품의 두 이름</td></tr>
-          <tr><td>Exchange (of contracts)</td><td>익스체인지, 계약 교환</td><td>보증서를 내는 시점</td></tr>
-          <tr><td>Settlement</td><td>셋틀, 잔금</td><td>돈을 전액 내는 시점</td></tr>
-          <tr><td>Vendor</td><td>매도인, 셀러</td><td>받아줄지 정하는 사람</td></tr>
+          <tr><td>Exchange</td><td>익스체인지</td><td>보증서를 내는 시점</td></tr>
+          <tr><td>Settlement</td><td>셋틀, 잔금</td><td>전액 내는 시점</td></tr>
+          <tr><td>Vendor</td><td>매도인, 셀러</td><td>받아줄지 정하는 쪽</td></tr>
           <tr><td>Unconditional approval</td><td>무조건부 승인</td><td>경로 A의 핵심 서류</td></tr>
-          <tr><td>Equity</td><td>순자산, 에쿼티</td><td>경로 B</td></tr>
-          <tr><td>Guarantor</td><td>보증인</td><td>가족 보증 구조</td></tr>
-          <tr><td>Guarantee &amp; Indemnity</td><td>보증·면책서</td><td>법인이나 트러스트 신청 때</td></tr>
-          <tr><td>Off-the-plan</td><td>오프더플랜, 선분양</td><td>롱텀 주력</td></tr>
+          <tr><td>Equity</td><td>에쿼티, 순자산</td><td>경로 B</td></tr>
+          <tr><td>Guarantor</td><td>보증인</td><td>보통 부모님 집</td></tr>
+          <tr><td>Guarantee &amp; Indemnity</td><td>보증·면책서</td><td>법인·트러스트 신청 때</td></tr>
           <tr><td>Sunset date</td><td>계약상 최장 기한</td><td>본드 기간 잡는 기준</td></tr>
-          <tr><td>Underwriter</td><td>인수 보험사</td><td>HDI Global Specialty SE</td></tr>
-          <tr><td>Claim</td><td>보증 청구</td><td>셋틀 실패 때 매도인이 검</td></tr>
           <tr><td>Notice to Complete</td><td>이행 최고장</td><td>추가 기한 통보</td></tr>
-          <tr><td>Bank guarantee</td><td>은행 보증서</td><td>담보 필요, 몇 주 걸림</td></tr>
-          <tr><td>Conveyancer</td><td>컨베이언서</td><td>수용 확인 실무 창구</td></tr>
+          <tr><td>Claim</td><td>보증 청구</td><td>셋틀 실패 때</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap" style="margin-top:1rem">
+      <table>
+        <caption>통화 중에 바로 답하는 열 줄</caption>
+        <thead><tr><th>질문</th><th>답</th></tr></thead>
+        <tbody>
+          <tr><td>얼마나 걸려요?</td><td>신청부터 발행까지 24시간</td></tr>
+          <tr><td>제일 길게는?</td><td>66개월까지, 보증금액 1천만 달러 이하</td></tr>
+          <tr><td>중간에 정리되나요?</td><td>셋틀이 당겨지면 언제든 정리(unlock) 가능</td></tr>
+          <tr><td>어디서 쓸 수 있어요?</td><td>호주 전역, 주거용·상업용 모두</td></tr>
+          <tr><td>계약금 전부를 대신하나요?</td><td>보통 10% 전액, 계약에 따라 일부만도</td></tr>
+          <tr><td>보증서는 누가 갖고 있어요?</td><td>매도인 쪽(에이전트나 변호사), 셋틀되면 소멸</td></tr>
+          <tr><td>잃어버리면?</td><td>전자 발행이라 재발급 요청 가능</td></tr>
+          <tr><td>대출 승인 전에도 되나요?</td><td>보유 부동산에 에쿼티가 있으면 가능성 높음</td></tr>
+          <tr><td>대출 심사에 불리한가요?</td><td>본드는 대출이 아니지만 잔금 계획은 같이 봅니다</td></tr>
+          <tr><td>세금 처리는?</td><td>투자용이면 달라질 수 있으니 회계사 확인</td></tr>
         </tbody>
       </table>
     </div>
@@ -1013,45 +893,24 @@
     <div class="ch-num">B</div>
     <div>
       <h2>발행 전 체크리스트</h2>
-      <p class="lede">제출 누르기 전에 이 열 줄을 소리 내서 확인하세요.</p>
+      <p class="lede">제출 누르기 전에 소리 내서 확인하세요.</p>
     </div>
   </div>
   <div class="col">
     <ol>
-      <li>매도인 쪽이 디파짓 본드를 받아준다고 했는가 <span class="fine">(가능하면 서면으로)</span></li>
-      <li>보증서의 <strong>매수인 이름</strong>이 계약서와 똑같은가 <span class="fine">(영문 철자, 순서, 미들네임까지)</span></li>
-      <li><strong>매도인 이름</strong>이 계약서와 같은가</li>
-      <li><strong>물건 주소</strong>가 계약서와 같은가 <span class="fine">(유닛 번호 포함)</span></li>
-      <li><strong>보증금액</strong>이 계약서상 계약금과 맞는가</li>
-      <li><strong>만기일</strong>이 실제 셋틀 날보다 충분히 뒤인가 <span class="fine">(롱텀은 지연까지 감안해서)</span></li>
-      <li>자격 경로(A인지 B인지)가 <strong>서류로 받쳐지는가</strong></li>
-      <li>법인이나 트러스트면 <strong>이사 승인과 보증·면책서</strong>가 준비됐는가</li>
-      <li>보증인이 있으면 <strong>변호사 상담을 권했고</strong> 그 사실을 기록에 남겼는가</li>
-      <li>11장의 <strong>다섯 가지</strong>를 문자나 이메일로 보내고 회신을 보관했는가</li>
+      <li>매도인·개발사가 받아준다고 했는가 <span class="fine">(가능하면 서면으로)</span></li>
+      <li>보증서의 <strong>매수인·매도인 이름</strong>이 계약서와 똑같은가 <span class="fine">(철자, 순서, 미들네임까지)</span></li>
+      <li><strong>물건 주소와 보증금액</strong>이 계약서와 맞는가 <span class="fine">(유닛 번호 포함)</span></li>
+      <li><strong>만기일</strong>이 실제 셋틀 날보다 충분히 뒤인가 <span class="fine">(롱텀은 지연까지 감안)</span></li>
+      <li>자격 경로(A인지 B인지)가 서류로 받쳐지는가</li>
+      <li><strong>ID, 보증인, 밸류에이션</strong> 세 가지가 다 있는가 <span class="fine">(없으면 우리가 밸류에이션 지원)</span></li>
+      <li>법인·트러스트면 이사 승인과 보증·면책서가 준비됐는가</li>
+      <li>보증인에게 변호사 상담을 권했고 기록에 남겼는가</li>
+      <li>10장의 다섯 가지를 문자나 이메일로 보내고 회신을 보관했는가</li>
     </ol>
-  </div>
-</section>
-
-<section id="apx-c">
-  <div class="ch-head">
-    <div class="ch-num">C</div>
-    <div>
-      <h2>출처와 면책</h2>
-      <p class="lede">이 책의 내용이 어디서 왔는지 밝힙니다.</p>
-    </div>
-  </div>
-  <div class="col">
-    <p class="fine">2026년 9월 기준으로 공개된 자료를 정리한 <strong>내부 교육용 문서</strong>입니다. Deposit Power 공식 페이지 내용, Chess Lending 공개 소개, Canstar와 Home Loan Experts 같은 호주 금융 정보 매체, 업계 보도를 참고했습니다. 자료 조사 과정에서 Deposit Power와 Chess Lending 사이트에 직접 접속할 수 없어 검색 결과 요약으로 정리한 부분이 있습니다.</p>
-    <ul class="fine" style="margin-top:.8rem">
-      <li>수수료율과 기간, 자격 요건은 <strong>바뀔 수 있습니다.</strong> 고객에게 제시하는 금액은 공식 견적으로 확인하세요.</li>
-      <li>상품의 법적 조건은 발행 시점의 약관과 PDS가 우선합니다.</li>
-      <li>이 문서는 일반적인 정보이고 개인 맞춤 금융·법률·세무 자문이 아닙니다.</li>
-      <li>12장의 인물과 회사, 금액은 <strong>전부 가상</strong>입니다. 셋틀 실패 절차(지연이자, 이행 최고, 계약 해제)는 NSW 표준 매매계약과 호주 법률·컨베이언싱 자료의 일반적인 설명을 정리한 것으로, 주와 계약마다 다릅니다.</li>
-      <li>대출 규제는 수시로 바뀌니 상담하는 시점 기준으로 확인하세요.</li>
-      <li>본드 발행과 신용 관련 업무는 각자의 인가 범위(호주 크레딧 라이선스, 발행사 인증) 안에서 해야 합니다.</li>
-    </ul>
-    <div class="checker" style="margin-top:2.2rem"></div>
-    <p class="fine" style="margin-top:1rem">Chess Lending 세일즈 에이전트 핸드북 · Edition 1.1 · 2026년 9월 · 내부용</p>
+    <div class="checker" style="margin-top:2rem"></div>
+    <p class="fine" style="margin-top:.9rem">기간·한도·수수료는 발행사 프레젠테이션과 2026년 9월 기준 공개 자료를 정리한 것입니다. 공개 웹 자료에는 최장 기간이 다르게 표기된 곳도 있으니 발행 시점 기준으로 확인하세요. 12장의 인물과 금액은 전부 가상이고, 셋틀 실패 절차는 NSW 표준 매매계약 기준의 일반적 설명입니다. 이 문서는 일반 정보이며 개인 맞춤 자문이 아닙니다.</p>
+    <p class="fine" style="margin-top:.6rem">Chess Lending 세일즈 에이전트 핸드북 · Edition 2.0 · 2026년 9월 · 내부용</p>
   </div>
 </section>
 
