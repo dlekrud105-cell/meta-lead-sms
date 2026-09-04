@@ -176,6 +176,34 @@
   .toc a:hover{color:var(--accent);text-decoration:underline}
   .toc h3{margin-bottom:.2rem}
 
+  /* case studies */
+  .case{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+  .case + .case{margin-top:1rem}
+  .case.alarm{border-color:color-mix(in srgb,var(--stop) 45%,var(--line))}
+  .case-head{padding:.95rem 1.15rem;border-bottom:1px solid var(--line);background:var(--surface-2);
+    display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;justify-content:space-between}
+  .case-head .id{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .case-head h3{margin:.1rem 0 0}
+  .case-body{padding:1.05rem 1.15rem;display:grid;gap:.95rem}
+  .case-body p{font-size:.95rem}
+  .field{display:grid;grid-template-columns:4.2rem 1fr;gap:.85rem;align-items:start}
+  .field .lbl{font-family:var(--mono);font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);padding-top:.32rem}
+  .field ul{font-size:.95rem}
+  .verdict{font-family:var(--mono);font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;
+    padding:.24rem .6rem;border-radius:999px;white-space:nowrap;border:1px solid}
+  .verdict.fit{color:var(--accent-ink);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+  .verdict.cond{color:var(--warn);background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+  .verdict.no{color:var(--stop);background:var(--stop-soft);border-color:color-mix(in srgb,var(--stop) 40%,transparent)}
+  .pc{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr))}
+  .pc > div{border-radius:8px;padding:.8rem .95rem}
+  .pc .up{background:var(--accent-soft)}
+  .pc .down{background:var(--stop-soft)}
+  .pc h4{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem}
+  .pc .up h4{color:var(--accent-ink)}
+  .pc .down h4{color:var(--stop)}
+  .pc ul{padding-left:1rem;font-size:.9rem;line-height:1.62}
+  .pc li{margin:.2rem 0}
   .fine{font-size:.85rem;color:var(--muted)}
   .kv{display:grid;grid-template-columns:8.5rem 1fr;gap:.3rem .9rem;font-size:.92rem}
   .kv dt{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
@@ -250,7 +278,7 @@
       <li><span class="n">09</span><a href="#c9">반론 처리 10선</a></li>
       <li><span class="n">10</span><a href="#c10">현금 · 디파짓 본드 · 뱅크 개런티 비교</a></li>
       <li><span class="n">11</span><a href="#c11">반드시 고지해야 할 다섯 가지</a></li>
-      <li><span class="n">12</span><a href="#c12">케이스 스터디 셋</a></li>
+      <li><span class="n">12</span><a href="#c12">케이스 스터디 여덟 — 장점과 단점</a></li>
       <li><span class="n">13</span><a href="#c13">리드에서 발행까지: 파이프라인 운영</a></li>
       <li><span class="n">14</span><a href="#c14">고객이 가장 많이 묻는 20문답</a></li>
       <li><span class="n">A</span><a href="#apx-a">한·영 용어집</a></li>
@@ -637,40 +665,253 @@
   <div class="ch-head">
     <div class="ch-num">12</div>
     <div>
-      <h2>케이스 스터디 셋</h2>
-      <p class="lede">숫자는 설명을 위한 예시이며 실제 견적이 아닙니다.</p>
+      <h2>케이스 스터디 여덟</h2>
+      <p class="lede">각 사례마다 <strong>장점과 단점을 나란히</strong> 놓았습니다. 단점을 먼저 말하는 브로커가 결국 더 팝니다.</p>
     </div>
   </div>
   <div class="col">
+    <p class="fine">아래 인물·회사·숫자는 모두 <strong>설명을 위한 가상 사례</strong>이며 실제 견적이 아닙니다. 수수료는 숏텀 ≈1.3% 가정의 어림값이고, 롱텀은 공식 견적이 필요합니다.</p>
+  </div>
 
-    <h3>사례 1 — 매도 전 매수 (숏텀)</h3>
-    <p class="fine">시드니 서부, 40대 부부. 현재 거주 주택 시세 $1.1M(잔여 대출 $380k), 마음에 드는 물건 $980,000.</p>
-    <ul>
-      <li><strong>문제:</strong> 계약금 $98,000이 지금 현금으로 없음. 기존 집은 아직 시장에 내놓기 전.</li>
-      <li><strong>설계:</strong> 6주 정산 조건 + 숏텀 본드. 자격은 <strong>기존 부동산 순자산(경로 B)</strong>으로 통과.</li>
-      <li><strong>비용:</strong> 약 $1,270 (≈$98,000 × 1.3%).</li>
-      <li><strong>결과:</strong> 매물을 놓치지 않고 계약, 기존 주택은 압박 없이 정상 가격으로 매각. 이후 신규 대출은 Chess Lending에서 진행.</li>
-      <li><strong>세일즈 포인트:</strong> 여기서 판 것은 이자 절감이 아니라 <strong>급매로 팔지 않아도 되는 자유</strong>입니다.</li>
-    </ul>
+  <div class="band" style="margin-top:1.1rem">
+    <div class="tablewrap">
+      <table>
+        <caption>한눈에 보는 여덟 가지 판정</caption>
+        <thead><tr><th>#</th><th>사례</th><th>유형</th><th>판정</th><th>결정을 가르는 한 가지</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>맞벌이 무자녀 커플의 첫 집</td><td>숏텀</td><td>조건부</td><td>정기예금 만기일 vs 정산일</td></tr>
+          <tr><td class="num">2</td><td>매도 전 매수(갈아타기)</td><td>숏텀</td><td>적합</td><td>기존 주택의 순자산</td></tr>
+          <tr><td class="num">3</td><td>은퇴 2년 전 오프더플랜</td><td>롱텀</td><td>조건부</td><td>정산 자금이 대출이 아닌가</td></tr>
+          <tr><td class="num">4</td><td>4채 보유 포트폴리오 투자자</td><td>숏텀</td><td>적합</td><td>잔금 대출 승인 여력</td></tr>
+          <tr><td class="num">5</td><td>첫 주택 구매자 + 가족 보증</td><td>숏텀</td><td>조건부</td><td>보증인의 이해와 동의</td></tr>
+          <tr><td class="num">6</td><td>자영업 법인 명의 매수</td><td>숏텀</td><td>적합</td><td>이사 승인·보증면책서 준비</td></tr>
+          <tr><td class="num">7</td><td>교환 후 정산 실패</td><td>사고</td><td>경고</td><td>정산 30일 전 대출 재확인</td></tr>
+          <tr><td class="num">8</td><td>계약금 조기 인출이 필요한 매도인</td><td>—</td><td>부적합</td><td>매도인의 자금 용도</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    <h3 style="margin-top:1.8rem">사례 2 — 오프더플랜 아파트 (롱텀)</h3>
-    <p class="fine">30대 전문직 1인 매수, $900,000 아파트, 완공 예정 24개월 후.</p>
-    <ul>
-      <li><strong>문제:</strong> 계약금 $90,000을 2년간 개발사 신탁계좌에 묶어야 함.</li>
-      <li><strong>설계:</strong> 정산 지연 가능성을 감안해 <strong>계약상 최장 기한보다 여유 있는 기간</strong>으로 롱텀 본드 신청.</li>
-      <li><strong>비교:</strong> 자금을 오프셋에 두었을 때 2년 기회비용 약 $9,000(연 5% 가정) vs. 롱텀 본드 수수료(공식 견적 필요).</li>
-      <li><strong>결과:</strong> 자금은 오프셋 계좌에 유지, 완공 시점에 대출 실행. 완공 4개월 지연됐지만 기간을 넉넉히 잡아 연장 없음.</li>
-      <li><strong>세일즈 포인트:</strong> 롱텀은 <strong>숫자로 이깁니다.</strong> 반드시 공식 견적을 받아 두 숫자를 나란히 보여주십시오.</li>
-    </ul>
+  <div class="band" style="margin-top:1.6rem">
 
-    <h3 style="margin-top:1.8rem">사례 3 — 첫 주택 구매자 + 가족 보증</h3>
-    <p class="fine">20대 후반, 예금 $60,000, 목표 물건 $780,000.</p>
-    <ul>
-      <li><strong>문제:</strong> 계약금 10% = $78,000. 단독 자격으로는 심사 통과가 어려움.</li>
-      <li><strong>설계:</strong> 순자산 있는 부모가 <strong>보증인</strong>으로 참여. 대출은 무조건부 승인을 먼저 확보(경로 A).</li>
-      <li><strong>주의:</strong> 보증인에게 <strong>보증의 법적 의미</strong>를 별도로 고지하고 독립적인 법률 조언을 권고할 것.</li>
-      <li><strong>결과:</strong> 계약 체결, 정산까지 완료. 부모 세대의 재융자 상담으로 확장.</li>
-    </ul>
+    <div class="case">
+      <div class="case-head">
+        <div><span class="id">Case 01 · 숏텀</span><h3>맞벌이 무자녀 커플, 첫 집</h3></div>
+        <span class="verdict cond">조건부 적합</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">서준(34)·미나(32) · 합산 세전 $245,000 · 자녀 없음 · 예금 $110,000(그중 $70,000은 5개월 뒤 만기 정기예금)</p>
+        <div class="field"><div class="lbl">상황</div><div>목표 물건 $1,150,000, 계약금 10% = <strong>$115,000</strong>. 자유 현금은 $40,000뿐이고 나머지는 정기예금에 묶여 있음. 인기 지역이라 계약을 미루면 물건을 놓칩니다.</div></div>
+        <div class="field"><div class="lbl">설계</div><div>6주 정산 + 숏텀 본드. 자격은 <strong>경로 A(무조건부 대출 승인)</strong>. 예상 수수료 약 <strong>$1,495</strong>. 잔금은 정기예금 만기 자금 + 대출로 충당.</div></div>
+        <div class="pc">
+          <div class="up"><h4>장점</h4><ul>
+            <li>정기예금 <strong>중도해지 이자 손실을 회피</strong> — 이 케이스에서 파는 것은 편의가 아니라 두 숫자의 비교입니다.</li>
+            <li>맞벌이 소득으로 서비스어빌리티가 강해 무조건부 승인이 빨리 나옵니다 → 자격 통과가 쉬움.</li>
+            <li>경쟁이 심한 물건에서 <strong>지금 계약</strong>할 수 있습니다.</li>
+            <li>자유 현금 $40,000을 예비비로 남겨 둘 수 있습니다.</li>
+          </ul></div>
+          <div class="down"><h4>단점 · 리스크</h4><ul>
+            <li><strong>만기일이 정산일보다 늦으면 설계 자체가 무너집니다.</strong> 날짜 대조가 1순위.</li>
+            <li>중도해지 손실이 $1,495보다 작으면 본드가 오히려 손해입니다 — 계산해 보고 아니면 팔지 마십시오.</li>
+            <li>출산 계획이 있으면 소득이 줄어 <strong>대출 규모 자체</strong>를 다시 봐야 합니다(본드와 별개 리스크).</li>
+            <li>매도인이 거절하면 무용지물 — 사전 확인 필요.</li>
+          </ul></div>
+        </div>
+        <div class="callout"><span class="k">세일즈 포인트</span>"정기예금 깨면 얼마 손해나는지 먼저 확인해 보시겠어요? 그 숫자가 $1,495보다 크면 본드가 이깁니다. 작으면 제가 권하지 않겠습니다."</div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head">
+        <div><span class="id">Case 02 · 숏텀</span><h3>매도 전 매수 — 갈아타기</h3></div>
+        <span class="verdict fit">적합</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">시드니 서부 40대 부부 · 거주 주택 $1.1M(잔여 대출 $380k) · 목표 물건 $980,000</p>
+        <div class="field"><div class="lbl">상황</div><div>계약금 $98,000이 지금 현금으로 없음. 기존 집은 아직 시장에 내놓기 전.</div></div>
+        <div class="field"><div class="lbl">설계</div><div>6주 정산 + 숏텀 본드, 자격은 <strong>경로 B(기존 부동산 순자산)</strong>. 수수료 약 <strong>$1,270</strong>.</div></div>
+        <div class="pc">
+          <div class="up"><h4>장점</h4><ul>
+            <li>기존 집을 <strong>급매로 던지지 않아도</strong> 됩니다 — 이 자유가 수수료보다 훨씬 큽니다.</li>
+            <li>담보를 묶지 않아 브릿징 대출보다 구조가 단순하고 빠릅니다.</li>
+            <li>순자산 기반 심사라 서류가 가볍습니다.</li>
+            <li>본드 한 건이 곧바로 신규 대출·재융자 상담으로 이어집니다.</li>
+          </ul></div>
+          <div class="down"><h4>단점 · 리스크</h4><ul>
+            <li>기존 집이 늦게 또는 싸게 팔리면 <strong>잔금 리스크는 그대로</strong> 남습니다.</li>
+            <li>브릿징 대출과 병행하면 비용이 이중으로 듭니다.</li>
+            <li>계약이 깨져도 수수료는 환불되지 않습니다.</li>
+            <li>두 거래의 정산일이 어긋나면 본드 기간을 다시 설계해야 합니다.</li>
+          </ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head">
+        <div><span class="id">Case 03 · 롱텀 · 고난도</span><h3>은퇴 2년 전, 오프더플랜 계약</h3></div>
+        <span class="verdict cond">조건부 적합</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">정우(63) · 2년 뒤 은퇴 예정 · 현 소득 $135,000 · 슈퍼 $520,000 · 거주 주택 $1.4M(대출 없음)</p>
+        <div class="field"><div class="lbl">상황</div><div>다운사이즈 목적의 오프더플랜 $980,000, 계약금 <strong>$98,000</strong>, 완공까지 26개월 — 즉 <strong>정산 시점은 은퇴 2개월 후</strong>입니다.</div></div>
+        <div class="field"><div class="lbl">핵심</div><div>계약은 <strong>일하는 지금</strong> 하지만 정산은 <strong>소득이 끊긴 뒤</strong>에 합니다. 지금 받은 대출 사전승인은 26개월 뒤에 유효하지 않고, 그때 다시 심사받습니다. 대출 기간이 은퇴 이후로 넘어가면 대출기관은 <strong>출구 전략(exit strategy)</strong> 문서를 요구합니다.</div></div>
+        <div class="field"><div class="lbl">설계</div><div>계약상 최장 기한(sunset date)에 여유를 더한 <strong>36개월 롱텀 본드</strong>. 정산 자금은 <strong>대출이 아니라</strong> ① 현 거주 주택 매각 대금 또는 ② 슈퍼 인출(보존 연령·세금은 회계사 확인)로 <strong>문서화</strong>합니다.</div></div>
+        <div class="pc">
+          <div class="up"><h4>장점</h4><ul>
+            <li>$98,000을 26개월간 개발사 신탁계좌에 묶지 않습니다 — 연 5% 가정 시 기회비용 <strong>약 $10,000</strong>.</li>
+            <li>은퇴를 앞둔 시기에 <strong>유동성을 지킵니다</strong>. 이 나이대에는 현금 접근성 자체가 방어막입니다.</li>
+            <li>슈퍼를 미리 헐지 않아도 되고, 현 주택을 서둘러 팔 필요도 없습니다.</li>
+            <li>롱텀은 <strong>숫자로 설득이 끝나는</strong> 유일한 구간입니다(기회비용 vs 수수료).</li>
+          </ul></div>
+          <div class="down"><h4>단점 · 리스크</h4><ul>
+            <li><strong>정산 시점에 소득이 없습니다.</strong> 대출로 정산할 계획이면 승인 리스크가 이 책에서 가장 큽니다.</li>
+            <li>완공 지연이 은퇴 이후로 더 밀리면 본드 <strong>연장 수수료</strong>가 붙고 상황은 더 나빠집니다.</li>
+            <li>완공 시 감정가가 계약가보다 낮으면(밸류에이션 갭) <strong>추가 현금</strong>이 필요합니다.</li>
+            <li>실패하면 구상 대상이 <strong>은퇴 자산</strong>입니다. 회복할 소득 기간이 없습니다.</li>
+            <li>26개월 뒤의 건강·가족 상황 변화는 아무도 보증하지 못합니다.</li>
+          </ul></div>
+        </div>
+        <div class="callout warn"><span class="k">이 케이스의 규칙</span>정산 계획이 <strong>"그때 대출 받으면 되죠"</strong>이면 진행하지 마십시오. 매각 또는 슈퍼로 정산한다는 계획이 문서로 남을 때만 발행합니다. 그리고 슈퍼 인출 가능 시점과 세금은 반드시 회계사·재무설계사에게 넘기십시오 — 브로커의 영역이 아닙니다.</div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head">
+        <div><span class="id">Case 04 · 숏텀</span><h3>투자용 4채 보유 포트폴리오 투자자</h3></div>
+        <span class="verdict fit">적합</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">현우(48) · 투자용 4채 합계 $4.2M · 대출 $2.6M · 순자산 충분, 현금흐름은 빠듯 · 5번째 물건 $850,000</p>
+        <div class="field"><div class="lbl">상황</div><div>계약금 $85,000. 에쿼티 릴리즈(재융자)로 현금을 뽑으려면 3~6주가 걸리는데, 매물은 이번 주에 계약해야 합니다.</div></div>
+        <div class="field"><div class="lbl">설계</div><div>경로 B(순자산) 숏텀 본드, 수수료 약 <strong>$1,105</strong>. 잔금은 재융자 완료 자금 + 신규 대출.</div></div>
+        <div class="pc">
+          <div class="up"><h4>장점</h4><ul>
+            <li>재융자를 기다리지 않고 <strong>계약 타이밍을 잡습니다</strong> — 투자자에게는 이것이 전부입니다.</li>
+            <li>기존 대출 구조를 건드리지 않아 <strong>교차담보(cross-collateralisation) 확대를 피합니다</strong>. 한 채를 팔 때 은행 동의가 필요해지는 상황을 만들지 않습니다.</li>
+            <li>현금흐름 버퍼를 유지한 채로 물건을 늘립니다.</li>
+            <li>여러 건을 병행하는 투자자에게는 반복 거래 상품이 됩니다.</li>
+          </ul></div>
+          <div class="down"><h4>단점 · 리스크</h4><ul>
+            <li><strong>본드는 대출을 만들어주지 않습니다.</strong> 다주택자는 서비스어빌리티·부채비율 제약이 가장 큰 집단이고, 잔금 대출이 막히면 본드는 사고로 직행합니다.</li>
+            <li>고부채 대출에 대한 규제 환경이 강화되는 국면입니다 — 진행 전 <strong>현재 기준으로 대출 여력을 반드시 재확인</strong>하십시오.</li>
+            <li>동시 진행 건이 많으면 각 본드의 <strong>만기 관리</strong>가 부담이 됩니다.</li>
+            <li>법인·트러스트 명의라면 이사 승인과 보증·면책서가 추가됩니다.</li>
+          </ul></div>
+        </div>
+        <div class="callout"><span class="k">순서</span>이 고객에게는 <strong>본드보다 잔금 대출을 먼저</strong> 확인합니다. 대출 여력이 확인된 뒤에야 본드가 좋은 도구가 됩니다.</div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head">
+        <div><span class="id">Case 05 · 숏텀</span><h3>첫 주택 구매자 + 가족 보증</h3></div>
+        <span class="verdict cond">조건부 적합</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">20대 후반 단독 매수 · 예금 $60,000 · 목표 물건 $780,000 · 부모가 순자산 있는 주택 보유</p>
+        <div class="field"><div class="lbl">설계</div><div>계약금 $78,000. 단독으로는 심사 통과가 어려워 부모가 <strong>보증인</strong>으로 참여하고, 대출은 무조건부 승인을 먼저 확보(경로 A).</div></div>
+        <div class="pc">
+          <div class="up"><h4>장점</h4><ul>
+            <li>자격 미달 고객을 <strong>계약 가능한 상태</strong>로 만듭니다.</li>
+            <li>본드 자체는 담보를 잡지 않으므로 부모 주택에 근저당이 설정되지는 않습니다.</li>
+            <li>가족 세대의 재융자 상담으로 자연스럽게 확장됩니다.</li>
+          </ul></div>
+          <div class="down"><h4>단점 · 리스크</h4><ul>
+            <li>보증인은 <strong>법적 책임</strong>을 집니다. 실패 시 구상이 가족 관계로 번집니다.</li>
+            <li>보증 사실이 부모의 <strong>향후 대출 여력</strong>에 영향을 줄 수 있습니다.</li>
+            <li>보증인이 내용을 충분히 이해하지 못한 채 서명하면 나중에 분쟁이 됩니다.</li>
+          </ul></div>
+        </div>
+        <div class="callout warn"><span class="k">필수 절차</span>보증인에게 <strong>독립적인 법률 조언</strong>을 권고하고, 권고했다는 사실을 기록에 남기십시오.</div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head">
+        <div><span class="id">Case 06 · 숏텀</span><h3>자영업 법인 명의 매수</h3></div>
+        <span class="verdict fit">적합</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">요식업 법인 대표(45) · 상업용 물건 $1,300,000 · 계약금 $130,000 · 운전자금 $200,000</p>
+        <div class="field"><div class="lbl">설계</div><div>법인 명의 신청. 이사 승인 + <strong>보증·면책서(Guarantee &amp; Indemnity)</strong> 준비. 수수료 약 <strong>$1,690</strong>.</div></div>
+        <div class="pc">
+          <div class="up"><h4>장점</h4><ul>
+            <li>운전자금 $200,000을 <strong>사업에 남겨둡니다</strong> — 계약금으로 빼면 성수기 재고·급여가 흔들립니다.</li>
+            <li>주거용·상업용 모두 신청 대상이라 사업체 매수에도 쓸 수 있습니다.</li>
+            <li>회계연도·현금흐름 사이클과 정산 시점을 맞춰 설계할 수 있습니다.</li>
+          </ul></div>
+          <div class="down"><h4>단점 · 리스크</h4><ul>
+            <li>서류가 늘어납니다 — 이사 승인, 보증·면책서, 법인 재무자료.</li>
+            <li>사실상 <strong>대표 개인의 보증 책임</strong>이 따라옵니다. 법인이라고 책임이 끊기지 않습니다.</li>
+            <li>자영업 소득은 대출 심사에서 보수적으로 평가됩니다 — 잔금 대출이 진짜 관문입니다.</li>
+            <li>승인까지 시간이 더 걸리므로 계약 예정일 여유가 필요합니다.</li>
+          </ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="case alarm">
+      <div class="case-head">
+        <div><span class="id">Case 07 · 사고 사례</span><h3>교환은 했는데, 정산 당일 돈이 없다</h3></div>
+        <span class="verdict no">경고</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">지훈(41) · 계약가 $1,050,000 · 계약금 $105,000을 디파짓 본드로 대체 · 6주 정산</p>
+        <div class="field"><div class="lbl">발단</div><div>정산 2주 전 대출 최종 심사에서 <strong>감정가가 $985,000으로 하락</strong>했고, 계약 후 늘린 신용카드 한도 때문에 승인 금액이 줄었습니다. 정산일 기준 <strong>$80,000이 부족</strong>합니다.</div></div>
+        <div class="field"><div class="lbl">전개</div><div>
+          <div class="flow" style="margin-top:.2rem">
+            <div class="step"><div><h4>정산일 불이행</h4><p>매도인은 계약서에 정해진 요율로 <strong>지연이자</strong>를 청구합니다. 호주 표준 계약에서 통상 연 6~12% 수준으로 설정됩니다.</p></div></div>
+            <div class="step"><div><h4>Notice to Complete 송달</h4><p>매도인이 이행 최고장을 보내 <strong>추가 기한(NSW 표준계약 기준 통상 14일)</strong>을 부여하고, 이때부터 기한은 계약의 본질(time of the essence)이 됩니다.</p></div></div>
+            <div class="step"><div><h4>계약 해제</h4><p>기한 내에도 정산하지 못하면 매도인은 계약을 해제하고 <strong>계약금을 몰취</strong>할 수 있습니다.</p></div></div>
+            <div class="step"><div><h4>보증 청구</h4><p>현금 계약금이 없으므로 매도인은 <strong>본드에 청구</strong>합니다. 발행사가 유효한 청구로 판단하면 매도인에게 $105,000을 지급합니다.</p></div></div>
+            <div class="step"><div><h4>구상</h4><p>발행사는 그 <strong>$105,000을 지훈에게 청구</strong>합니다. 지급하지 않으면 법적 회수 절차로 갑니다.</p></div></div>
+            <div class="step"><div><h4>추가 손해배상</h4><p>매도인은 지연이자와 비용에 더해, 해제 후 재매각에서 손실이 나면 <strong>그 차액까지 청구</strong>할 수 있습니다(NSW 표준계약상 해제 후 12개월 내 재매각 손실 등).</p></div></div>
+          </div>
+        </div></div>
+        <div class="pc">
+          <div class="up"><h4>본드였기에 그나마 나았던 점</h4><ul>
+            <li>정산까지의 6주 동안 $105,000이 <strong>묶여 있지 않았습니다.</strong> 그 현금이 손에 남아 있었기 때문에 부족분을 메우거나 정산 연장을 협상할 <strong>여지</strong>가 있었습니다.</li>
+            <li>현금 계약금이었다면 그 돈은 이미 신탁계좌에 들어가 있고, 위기 국면에서 쓸 수 없었습니다.</li>
+            <li>즉 본드는 <strong>대응할 시간을 벌어주는</strong> 정도이지, 손실을 없애지 않습니다.</li>
+          </ul></div>
+          <div class="down"><h4>그래도 남는 손실</h4><ul>
+            <li>계약금 상당액 <strong>$105,000의 채무</strong>가 발행사에 대해 그대로 생깁니다.</li>
+            <li>지연이자, 이행 최고 비용, 재매각 손실까지 <strong>계약금 이상</strong>으로 커질 수 있습니다.</li>
+            <li>미상환 시 법적 추심으로 이어지고, 향후 대출에 영향을 줍니다.</li>
+            <li>"본드였으니 그냥 없던 일이 된다"는 오해가 있었다면 <strong>브로커의 설명 책임</strong>이 문제됩니다.</li>
+          </ul></div>
+        </div>
+        <div class="callout stop"><span class="k">예방 다섯 줄 — 모든 본드 건에 적용</span>
+          ① 정산 <strong>30일 · 14일 · 7일</strong> 전 대출 실행 가능 여부를 재확인한다. ② 오프더플랜과 급등 지역은 <strong>감정가 하락</strong>을 전제로 여유를 잡는다. ③ 계약 후 정산까지 <strong>신규 신용·카드 한도·할부</strong>를 만들지 않도록 고객에게 서면으로 경고한다. ④ 계약금의 <strong>10~20%를 예비자금</strong>으로 남기게 한다. ⑤ 위험 신호가 보이면 즉시 매도인 측과 <strong>연장 협상</strong>에 들어간다 — 불이행 통보를 기다리지 않는다.
+        </div>
+        <p class="fine">위 절차와 기한은 NSW 표준 매매계약을 기준으로 한 일반적 흐름이며, <strong>주(state)와 개별 계약 조항에 따라 달라집니다.</strong> 실제 사건에서는 반드시 고객의 변호사·컨베이언서 판단을 따르십시오.</p>
+        <div class="callout"><span class="k">세일즈 포인트</span>이 사례가 있기 때문에 첫 통화에서 잔금 계획부터 묻는 겁니다. 우리가 파는 것은 보증서가 아니라 <strong>무사히 끝나는 정산</strong>입니다.</div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head">
+        <div><span class="id">Case 08 · 판매 금지</span><h3>계약금을 바로 써야 하는 매도인 · 경매 현장</h3></div>
+        <span class="verdict no">부적합</span>
+      </div>
+      <div class="case-body">
+        <p class="who-line">두 상황 모두 매수인의 자격과 무관하게 본드가 작동하지 않습니다.</p>
+        <div class="field"><div class="lbl">상황 A</div><div>매도인이 그 계약금을 <strong>조기 인출해 다음 집 계약금으로 쓰려는</strong> 경우. 보증서는 현금이 아니므로 매도인의 필요를 채우지 못합니다. 이때는 현금 계약금이나 브릿징으로 설계를 바꿔야 합니다.</div></div>
+        <div class="field"><div class="lbl">상황 B</div><div><strong>경매.</strong> 조건 없는 즉시 계약이라 통상 현금 계약금을 요구합니다. 매도인 측 <strong>서면 동의 없이는 사용 불가</strong>로 간주하고, 확인 전에는 절대 입찰하지 않게 하십시오.</div></div>
+        <div class="pc">
+          <div class="up"><h4>그래도 남는 기회</h4><ul>
+            <li>본드가 안 되는 건이라고 상담이 끝나는 것은 아닙니다 — <strong>브릿징·재융자·대출 사전승인</strong>으로 옮겨 갑니다.</li>
+            <li>경매 고객은 <strong>사전 무조건부 승인</strong> 수요가 큽니다. 더 큰 거래로 연결됩니다.</li>
+          </ul></div>
+          <div class="down"><h4>하면 안 되는 것</h4><ul>
+            <li>매도인 동의를 <strong>추정</strong>하고 발행하는 것 — 수수료는 환불되지 않습니다.</li>
+            <li>"경매에서도 대부분 받아줍니다" 같은 말 — 사실이 아니고, 낙찰 현장에서 계약 불성립으로 이어집니다.</li>
+          </ul></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -804,6 +1045,8 @@
       <li>수수료율·기간·자격 요건은 <strong>변경될 수 있으며</strong>, 고객 제시용 금액은 반드시 공식 견적으로 확인하십시오.</li>
       <li>상품의 법적 조건은 발행 시점의 약관·PDS가 우선합니다.</li>
       <li>본 문서는 일반 정보이며 개인 맞춤 금융·법률·세무 자문이 아닙니다.</li>
+      <li>12장의 인물·회사·금액은 <strong>전부 가상</strong>이며, 정산 불이행 절차(지연이자·이행 최고·계약 해제)는 NSW 표준 매매계약과 호주 법률·컨베이언싱 자료의 일반적 설명을 정리한 것입니다. 주별·계약별로 다릅니다.</li>
+      <li>대출 규제 환경(고부채 대출 제한 등)은 수시로 바뀌므로 고객 상담 시점의 기준으로 확인하십시오.</li>
       <li>본드 발행 및 신용 관련 업무는 각 담당자의 인가 범위(호주 크레딧 라이선스 및 발행사 인증) 내에서 수행되어야 합니다.</li>
     </ul>
     <div class="checker" style="margin-top:2.2rem"></div>
