@@ -111,6 +111,20 @@ def debug_sns():
 def health():
     return 'Meta Lead SMS Server is running!', 200
 
+
+# Read-only accounting dashboard at /accounting. It only mounts when
+# ACCOUNTING_TOKEN is set, so the books are never exposed by accident, and a
+# failure here must never take the lead webhook down.
+try:
+    from accounting.web import register as register_accounting
+    if register_accounting(app):
+        print('[ACCOUNTING] Dashboard mounted at /accounting', flush=True)
+    else:
+        print('[ACCOUNTING] Dashboard disabled (set ACCOUNTING_TOKEN to enable)',
+              flush=True)
+except Exception as e:
+    print(f'[ACCOUNTING] Dashboard not available: {e}', flush=True)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
