@@ -3,3 +3,7 @@ __pycache__/
 .env
 venv/
 .venv/
+
+# The books themselves - real financial data stays out of git by default.
+# Remove this line if you decide to version-control your ledger.
+data/

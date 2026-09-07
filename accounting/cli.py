@@ -1,0 +1,797 @@
+"""Command line interface: python3 -m accounting <command>."""
+from __future__ import annotations
+
+import argparse
+import sys
+from datetime import date
+
+from . import accounts as coa
+from . import calendar_au as cal
+from . import config
+from . import contacts as contacts_mod
+from . import jobs as jobs_mod
+from . import ledger
+from . import reports as rp
+from . import store
+from . import transactions as tx
+from .money import ZERO, fmt, money
+from .periods import fy_ending, fy_range, parse_date, quarter_of, resolve_period
+from .render import heading, table
+
+
+def today() -> str:
+    return date.today().isoformat()
+
+
+def _period(args):
+    """Resolve --period, or --from/--to, into (start, end, label)."""
+    if getattr(args, 'period', None):
+        return resolve_period(args.period)
+    start = getattr(args, 'start', None)
+    end = getattr(args, 'end', None) or today()
+    if not start:
+        fy = fy_ending(end)
+        start, fy_end = fy_range(fy)
+        return start, parse_date(end), f'FY{fy} to {end}'
+    return parse_date(start), parse_date(end), f'{start} to {end}'
+
+
+def _warn(result):
+    for message in result.get('warnings', []):
+        print(f'  ! {message}')
+
+
+# --------------------------------------------------------------------- setup
+
+def cmd_setup(args):
+    company = config.load()
+    company.name = args.name or company.name
+    company.trading_name = args.trading_name or company.trading_name
+    company.abn = (args.abn or company.abn).replace(' ', '')
+    company.acn = (args.acn or company.acn).replace(' ', '')
+    company.state = args.state or company.state
+    company.address = args.address or company.address
+    company.registered_date = args.registered or company.registered_date
+    if args.no_gst:
+        company.gst_registered = False
+    if args.directors:
+        defaults = config.default_directors()
+        company.directors = []
+        for index, name in enumerate(args.directors[:len(defaults)]):
+            person = defaults[index]
+            person.name = name
+            company.directors.append(person)
+    elif not company.directors:
+        company.directors = config.default_directors()
+    company.save()
+
+    store.ACCOUNTS_EXPORT.write_all([{
+        'code': a.code, 'name': a.name, 'type': a.type, 'tax_code': a.tax_code,
+        'normal_side': a.normal_side, 'tpar': 'yes' if a.tpar else 'no',
+        'deductible': 'yes' if a.deductible else 'no', 'note': a.note,
+    } for a in coa.CHART])
+
+    print(f'Books ready in {store.data_dir()}')
+    print(f'  Company     {company.name}')
+    print(f'  Registered  {company.registered_date or "(not set - use --registered)"}')
+    print(f'  GST         {"registered, " + company.gst_cycle if company.gst_registered else "not registered"}')
+    print(f'  Directors   {", ".join(d.name for d in company.directors)}')
+    print(f'  Accounts    {len(coa.CHART)} in accounts.csv')
+    if not company.registered_date:
+        print('\n  Set the ASIC registration date so the compliance calendar works:')
+        print('    python3 -m accounting setup --registered 2026-01-15')
+    return 0
+
+
+def cmd_company(args):
+    company = config.load()
+    print(heading(company.name))
+    rows = [
+        ['ABN', company.abn or '(not set)'],
+        ['ACN', company.acn or '(not set)'],
+        ['Registered', company.registered_date or '(not set)'],
+        ['State', company.state],
+        ['GST', f'registered, {company.gst_cycle}' if company.gst_registered
+         else 'not registered'],
+        ['Company tax rate', f'{company.company_tax_rate:.0%}'
+         + (' (base rate entity)' if company.base_rate_entity else '')],
+        ['Super guarantee', f'{company.super_rate:.0%}'],
+        ['No-ABN withholding', f'{company.no_abn_withholding_rate:.0%}'],
+        ['TPAR', 'yes - building and construction' if company.reports_tpar else 'no'],
+    ]
+    print(table(['Setting', 'Value'], rows))
+    print(heading('Directors'))
+    print(table(['Key', 'Name', 'Wages', 'Loan account', 'Dividends'],
+                [[d.key, d.name, d.wage_account, d.loan_account, d.dividend_account]
+                 for d in company.directors]))
+    return 0
+
+
+def cmd_accounts(args):
+    rows = [[a.code, a.name, a.type, a.tax_code, a.normal_side,
+             'TPAR' if a.tpar else ('no-ded' if not a.deductible else '')]
+            for a in coa.CHART
+            if not args.search or args.search.lower() in
+            f'{a.code} {a.name} {a.note}'.lower()]
+    print(table(['Code', 'Name', 'Type', 'Tax', 'Nrm', 'Flags'], rows))
+    return 0
+
+
+# ------------------------------------------------------------------- contacts
+
+def cmd_contact_add(args):
+    contact = contacts_mod.add(
+        args.name, args.type, abn=args.abn or '', gst_registered=args.gst,
+        email=args.email or '', phone=args.phone or '',
+        address=args.address or '', notes=args.notes or '')
+    print(f'{contact.contact_id}  {contact.name}  ({contact.type})')
+    if contact.type == contacts_mod.SUBCONTRACTOR and not contact.abn:
+        print('  ! No ABN. You must withhold 47% from payments and the TPAR '
+              'will be incomplete.')
+    return 0
+
+
+def cmd_contact_list(args):
+    rows = [[c.contact_id, c.name, c.type, c.abn or '-',
+             'yes' if c.gst_registered else 'no', c.phone or c.email or '']
+            for c in contacts_mod.all_contacts()
+            if not args.type or c.type == args.type]
+    print(table(['ID', 'Name', 'Type', 'ABN', 'GST', 'Contact'], rows))
+    return 0
+
+
+def cmd_contact_update(args):
+    changes = {k: v for k, v in vars(args).items()
+               if k in ('abn', 'email', 'phone', 'address', 'notes') and v is not None}
+    if args.gst is not None:
+        changes['gst_registered'] = args.gst
+        changes['abn_quoted'] = bool(changes.get('abn'))
+    if changes.get('abn'):
+        changes['abn_quoted'] = True
+    contact = contacts_mod.update(args.reference, **changes)
+    print(f'{contact.contact_id}  {contact.name}  ABN {contact.abn or "-"}')
+    return 0
+
+
+# ----------------------------------------------------------------------- jobs
+
+def cmd_job_add(args):
+    job = jobs_mod.add(args.name, contact_id=args.contact or '',
+                       address=args.address or '', quoted_incl=args.quoted or '',
+                       started=args.started or '')
+    print(f'{job.job_id}  {job.name}')
+    return 0
+
+
+def cmd_job_list(args):
+    rows = [[j.job_id, j.name, j.status, j.quoted_incl or '-', j.address]
+            for j in jobs_mod.all_jobs()]
+    print(table(['ID', 'Name', 'Status', 'Quoted', 'Address'], rows))
+    return 0
+
+
+# ------------------------------------------------------------------- invoices
+
+def cmd_invoice(args):
+    result = tx.create_invoice(args.date, args.contact, args.line,
+                               due_days=args.terms, job=args.job or '',
+                               memo=args.memo or '')
+    print(f'{result["doc_id"]}  total {fmt(result["total_incl"])} '
+          f'(GST {fmt(result["gst"])})  due {result["due_date"]}')
+    return 0
+
+
+def cmd_receipt(args):
+    result = tx.record_receipt(args.date, args.invoice, args.amount)
+    print(f'Received {fmt(result["amount"])} on {args.invoice}. '
+          f'Outstanding {fmt(result["remaining"])}.')
+    return 0
+
+
+def cmd_bill(args):
+    result = tx.create_bill(args.date, args.contact, args.line,
+                            due_days=args.terms, job=args.job or '',
+                            memo=args.memo or '')
+    print(f'{result["doc_id"]}  total {fmt(result["total_incl"])} '
+          f'(GST {fmt(result["gst"])})  payable {fmt(result["payable"])}  '
+          f'due {result["due_date"]}')
+    _warn(result)
+    return 0
+
+
+def cmd_pay_bill(args):
+    result = tx.pay_bill(args.date, args.bill, args.amount)
+    print(f'Paid {fmt(result["amount"])} on {args.bill}. '
+          f'Outstanding {fmt(result["remaining"])}.')
+    return 0
+
+
+def cmd_spend(args):
+    result = tx.spend_money(args.date, args.account, args.amount,
+                            contact=args.contact or '',
+                            description=args.description or '',
+                            tax_code=args.tax_code or '', job=args.job or '',
+                            bank=args.bank)
+    print(f'{result["entry_id"]}  {fmt(result["amount_incl"])} paid '
+          f'({fmt(result["amount_ex"])} + GST {fmt(result["gst"])})')
+    return 0
+
+
+def cmd_receive(args):
+    result = tx.receive_money(args.date, args.account, args.amount,
+                              contact=args.contact or '',
+                              description=args.description or '',
+                              tax_code=args.tax_code or '', job=args.job or '',
+                              bank=args.bank)
+    print(f'{result["entry_id"]}  {fmt(result["amount_incl"])} received '
+          f'({fmt(result["amount_ex"])} + GST {fmt(result["gst"])})')
+    return 0
+
+
+# ------------------------------------------------------------------- payroll
+
+def cmd_wages(args):
+    result = tx.pay_wages(args.date, args.director, args.gross, args.payg,
+                          super_amount=args.super, bank=args.bank)
+    print(f'{result["entry_id"]}  gross {fmt(result["gross"])}  '
+          f'PAYG {fmt(result["payg"])}  net paid {fmt(result["net"])}  '
+          f'super accrued {fmt(result["super"])}')
+    print('  Remember to lodge this through STP on or before the pay day.')
+    return 0
+
+
+def cmd_super(args):
+    result = tx.pay_super(args.date, args.amount, bank=args.bank)
+    print(f'{result["entry_id"]}  {fmt(result["amount"])} paid to funds')
+    return 0
+
+
+def cmd_dividend(args):
+    result = tx.pay_dividend(args.date, args.director, args.amount,
+                             bank=args.bank, franked=not args.unfranked)
+    print(f'{result["entry_id"]}  {fmt(result["amount"])} '
+          f'{"franked" if result["franked"] else "unfranked"} dividend')
+    return 0
+
+
+def cmd_loan(args):
+    direction = 'from_director' if args.repay else 'to_director'
+    result = tx.director_loan(args.date, args.director, args.amount,
+                              direction=direction, bank=args.bank)
+    print(f'{result["entry_id"]}  {fmt(result["amount"])} {direction.replace("_", " ")}')
+    if direction == 'to_director':
+        print('  ! Division 7A: repay this before the lodgement day for the '
+              'financial year, or put it under a complying loan agreement.')
+    return 0
+
+
+def cmd_depreciate(args):
+    result = tx.record_depreciation(args.date, args.account, args.amount)
+    print(f'{result["entry_id"]}  {fmt(result["amount"])} depreciation')
+    return 0
+
+
+def cmd_journal(args):
+    result = tx.manual_journal(args.date, args.memo, args.line)
+    print(f'{result["entry_id"]}  posted')
+    return 0
+
+
+# -------------------------------------------------------------------- reports
+
+def cmd_report(args):
+    name = args.name
+    handler = REPORTS.get(name)
+    if handler is None:
+        print(f'unknown report {name!r}; try: {", ".join(sorted(REPORTS))}',
+              file=sys.stderr)
+        return 2
+    return handler(args)
+
+
+def _report_tb(args):
+    as_at = args.end or today()
+    rows = [[a.code, a.name, fmt(d) if d else '', fmt(c) if c else '']
+            for a, d, c in ledger.trial_balance(as_at)]
+    total_debit = money(sum((d for _, d, _ in ledger.trial_balance(as_at)), ZERO))
+    total_credit = money(sum((c for _, _, c in ledger.trial_balance(as_at)), ZERO))
+    print(heading(f'Trial balance as at {as_at}'))
+    print(table(['Code', 'Account', 'Debit', 'Credit'], rows, align='llrr'))
+    print(f'\n  Totals: debits {fmt(total_debit)}  credits {fmt(total_credit)}  '
+          f'{"balanced" if total_debit == total_credit else "OUT OF BALANCE"}')
+    return 0
+
+
+def _print_section(section):
+    if not section.rows:
+        return
+    print(f'\n  {section.title}')
+    print(table(['Code', 'Account', 'Amount'],
+                [[r.account.code, r.account.name, fmt(r.amount)] for r in section.rows],
+                align='llr', indent='    '))
+    print(f'    {"Total " + section.title:<44} {fmt(section.total):>12}')
+
+
+def _report_pl(args):
+    start, end, label = _period(args)
+    pl = rp.profit_and_loss(start, end, label)
+    print(heading(f'Profit and loss  {pl.label}'))
+    _print_section(pl.income)
+    _print_section(pl.cost_of_sales)
+    print(f'\n    {"GROSS PROFIT":<44} {fmt(pl.gross_profit):>12}')
+    _print_section(pl.expenses)
+    print(f'\n    {"NET PROFIT":<44} {fmt(pl.net_profit):>12}')
+    if pl.non_deductible:
+        print(f'    {"Add back non-deductible":<44} {fmt(pl.non_deductible):>12}')
+        print(f'    {"TAXABLE INCOME":<44} {fmt(pl.taxable_income):>12}')
+    return 0
+
+
+def _report_bs(args):
+    as_at = args.end or today()
+    bs = rp.balance_sheet(as_at)
+    print(heading(f'Balance sheet as at {bs.as_at}'))
+    _print_section(bs.assets)
+    _print_section(bs.liabilities)
+    _print_section(bs.equity)
+    print(f'    {"Retained earnings":<44} {fmt(bs.retained_earnings):>12}')
+    print(f'    {"Current year earnings":<44} {fmt(bs.current_year_earnings):>12}')
+    print(f'    {"TOTAL EQUITY":<44} {fmt(bs.total_equity):>12}')
+    print(f'\n    Assets {fmt(bs.assets.total)}  =  Liabilities '
+          f'{fmt(bs.liabilities.total)} + Equity {fmt(bs.total_equity)}  '
+          f'{"OK" if bs.balances else "OUT BY " + fmt(bs.out_by)}')
+    return 0
+
+
+def _report_bas(args):
+    start, end, label = _period(args)
+    report = rp.bas(start, end, label, payg_instalment=args.instalment or 0)
+    print(heading(f'Business activity statement  {report.label}'))
+    print(f'  Period {report.start} to {report.end}   Due {report.due}')
+    rows = [
+        ['G1', 'Total sales (including GST)', fmt(report.g1)],
+        ['G3', 'Other GST-free sales', fmt(report.g3)],
+        ['G10', 'Capital purchases (including GST)', fmt(report.g10)],
+        ['G11', 'Non-capital purchases (including GST)', fmt(report.g11)],
+        ['1A', 'GST on sales', fmt(report.gst_on_sales)],
+        ['1B', 'GST on purchases', fmt(report.gst_on_purchases)],
+        ['W1', 'Total salary, wages and other payments', fmt(report.w1)],
+        ['W2', 'Amounts withheld from W1', fmt(report.w2)],
+        ['W4', 'Amounts withheld where no ABN quoted', fmt(report.w4)],
+        ['W5', 'Total amounts withheld', fmt(report.w5)],
+        ['5A', 'PAYG income tax instalment', fmt(report.payg_instalment)],
+        ['7', 'NET AMOUNT ' + ('PAYABLE' if report.net_amount >= ZERO else 'REFUNDABLE'),
+         fmt(abs(report.net_amount))],
+    ]
+    print(table(['Label', 'Description', 'Amount'], rows, align='llr'))
+    for message in report.checks:
+        print(f'\n  ! {message}')
+    if args.pay:
+        result = tx.pay_bas(args.pay_date or report.due.isoformat(),
+                            report.gst_on_sales, report.gst_on_purchases,
+                            report.w5, report.payg_instalment,
+                            memo=f'BAS {report.label}')
+        print(f'\n  Settled: {result["entry_id"]}  net {fmt(result["net"])} '
+              f'{result["direction"]}')
+    return 0
+
+
+def _report_tpar(args):
+    fy = args.fy or fy_ending(today())
+    report = rp.tpar(fy)
+    print(heading(f'Taxable payments annual report  FY{report.fy}'))
+    print(f'  Payments made {report.start} to {report.end}   Due {report.due}')
+    rows = [[r.contact.name, r.contact.abn or 'MISSING', fmt(r.gross_paid),
+             fmt(r.gst), fmt(r.tax_withheld), '; '.join(r.issues)]
+            for r in report.rows]
+    print(table(['Payee', 'ABN', 'Gross paid', 'GST', 'Withheld', 'Issues'],
+                rows, align='llrrrl'))
+    print(f'\n  Total paid {fmt(report.total_paid)}   GST {fmt(report.total_gst)}'
+          f'   Withheld {fmt(report.total_withheld)}')
+    problems = [r for r in report.rows if r.issues]
+    if problems:
+        print(f'\n  ! {len(problems)} payee(s) missing details the TPAR requires. '
+              'Fix with: python3 -m accounting contact update <id> --abn ... '
+              '--address ...')
+    return 0
+
+
+def _report_ar(args):
+    as_at = args.end or today()
+    report = rp.aged_receivables(as_at)
+    print(heading(f'Aged receivables as at {as_at}'))
+    print(table(['Invoice', 'Customer', 'Due', 'Amount', 'Age'],
+                [[r.doc_id, r.contact, r.due_date.isoformat(), fmt(r.amount), r.bucket]
+                 for r in report.rows], align='lllrl'))
+    print(f'\n  Total owed to you {fmt(report.total)}')
+    print(table(['Bucket', 'Amount'],
+                [[k, fmt(v)] for k, v in report.by_bucket().items() if v],
+                align='lr'))
+    return 0
+
+
+def _report_ap(args):
+    as_at = args.end or today()
+    report = rp.aged_payables(as_at)
+    print(heading(f'Aged payables as at {as_at}'))
+    print(table(['Bill', 'Supplier', 'Due', 'Amount', 'Age'],
+                [[r.doc_id, r.contact, r.due_date.isoformat(), fmt(r.amount), r.bucket]
+                 for r in report.rows], align='lllrl'))
+    print(f'\n  Total you owe {fmt(report.total)}')
+    return 0
+
+
+def _report_jobs(args):
+    start, end, label = _period(args)
+    results = rp.job_results(start, end)
+    print(heading(f'Job profitability  {label}'))
+    print(table(['Job', 'Income', 'Cost', 'Margin', 'Margin %'],
+                [[r.job.name, fmt(r.income), fmt(r.cost), fmt(r.margin),
+                  f'{r.margin_pct}%'] for r in results], align='lrrrr'))
+    return 0
+
+
+def _report_cash(args):
+    as_at = args.end or today()
+    position = rp.cash_position(as_at)
+    print(heading(f'Cash position as at {as_at}'))
+    rows = [
+        ['Bank and card balances', fmt(position.bank)],
+        ['GST owing to the ATO', fmt(position.gst_owing)],
+        ['PAYG withheld, not yet paid', fmt(position.payg_owing)],
+        ['Super accrued, not yet paid', fmt(position.super_owing)],
+        ['Company tax provision', fmt(position.tax_provision)],
+        ['SET ASIDE IN TOTAL', fmt(position.set_aside)],
+        ['SAFE TO SPEND', fmt(position.available)],
+    ]
+    print(table(['Item', 'Amount'], rows, align='lr'))
+    if position.available < ZERO:
+        print('\n  ! You are holding less cash than you owe the ATO and the '
+              'super funds. Chase debtors before drawing anything out.')
+    return 0
+
+
+def _report_tax(args):
+    fy = args.fy or fy_ending(today())
+    estimate = rp.tax_estimate(fy, as_at=args.end)
+    print(heading(f'Company tax estimate  FY{estimate.fy}'))
+    rows = [
+        ['Net profit', fmt(estimate.net_profit)],
+        ['Add back non-deductible', fmt(estimate.non_deductible)],
+        ['Taxable income', fmt(estimate.taxable_income)],
+        [f'Company tax at {estimate.rate:.0%}', fmt(estimate.tax)],
+        ['Less PAYG instalments paid', fmt(estimate.instalments_paid)],
+        ['ESTIMATED TAX PAYABLE', fmt(estimate.payable)],
+    ]
+    print(table(['Item', 'Amount'], rows, align='lr'))
+    print('\n  Estimate only: it ignores depreciation timing differences, '
+          'carried-forward losses and any private-use adjustments.')
+    return 0
+
+
+def _report_loans(args):
+    as_at = args.end or today()
+    print(heading(f'Director loan accounts as at {as_at}'))
+    positions = rp.director_loans(as_at)
+    print(table(['Director', 'Account', 'Company owes director', 'Director owes company'],
+                [[p.director, p.account.code, fmt(p.balance) if p.balance > ZERO else '',
+                  fmt(p.owed_by_director) if p.owed_by_director else '']
+                 for p in positions], align='llrr'))
+    for message in rp.division_7a_warnings(as_at):
+        print(f'\n  ! {message}')
+    return 0
+
+
+REPORTS = {
+    'tb': _report_tb, 'pl': _report_pl, 'bs': _report_bs, 'bas': _report_bas,
+    'tpar': _report_tpar, 'ar': _report_ar, 'ap': _report_ap, 'jobs': _report_jobs,
+    'cash': _report_cash, 'tax': _report_tax, 'loans': _report_loans,
+}
+
+
+# ------------------------------------------------------------------- calendar
+
+def cmd_calendar(args):
+    as_at = args.date or today()
+    company = config.load()
+    if not company.registered_date:
+        print('Set the registration date first: '
+              'python3 -m accounting setup --registered YYYY-MM-DD', file=sys.stderr)
+        return 2
+    overdue = cal.overdue(as_at, company)
+    upcoming = cal.upcoming(as_at, args.days, company)
+    print(heading(f'Compliance calendar as at {as_at}'))
+    if overdue:
+        print('\n  OVERDUE')
+        print(table(['Due', 'Kind', 'Period', 'Obligation'],
+                    [[o.due.isoformat(), o.kind, o.period, o.label] for o in overdue],
+                    indent='    '))
+    else:
+        print('\n  Nothing overdue.')
+    print(f'\n  NEXT {args.days} DAYS')
+    print(table(['Due', 'In', 'Kind', 'Period', 'Obligation'],
+                [[o.due.isoformat(), f'{o.days_out(as_at)}d', o.kind, o.period, o.label]
+                 for o in upcoming], indent='    '))
+    if args.detail:
+        for obligation in overdue + upcoming:
+            print(f'\n  {obligation.due} {obligation.label} ({obligation.period})')
+            print(f'    {obligation.note}')
+    return 0
+
+
+# ---------------------------------------------------------------------- check
+
+def cmd_check(args):
+    """One command that answers: is anything wrong with the books right now?"""
+    as_at = args.date or today()
+    company = config.load()
+    problems, notes = [], []
+
+    trial = ledger.trial_balance(as_at)
+    debits = money(sum((d for _, d, _ in trial), ZERO))
+    credits = money(sum((c for _, _, c in trial), ZERO))
+    if debits != credits:
+        problems.append(f'Trial balance is out by {fmt(debits - credits)}.')
+
+    if company.registered_date:
+        for obligation in cal.overdue(as_at, company):
+            problems.append(
+                f'{obligation.due}  OVERDUE  {obligation.label} ({obligation.period})')
+    else:
+        notes.append('No ASIC registration date set, so no compliance calendar.')
+
+    for message in rp.division_7a_warnings(as_at, company):
+        problems.append(message)
+
+    for contact in contacts_mod.all_contacts():
+        if contact.type == contacts_mod.SUBCONTRACTOR and not contact.abn:
+            problems.append(
+                f'{contact.name} ({contact.contact_id}) is a subcontractor with no '
+                'ABN on file: 47% withholding applies and the TPAR will be short.')
+
+    fy = fy_ending(as_at)
+    report = rp.tpar(fy)
+    for row in report.rows:
+        if row.issues:
+            problems.append(
+                f'TPAR FY{fy}: {row.contact.name} is missing '
+                f'{" and ".join(row.issues)}.')
+
+    aged = rp.aged_receivables(as_at)
+    old = [r for r in aged.rows if r.bucket in ('61-90 days', '90+ days')]
+    if old:
+        problems.append(
+            f'{len(old)} invoice(s) worth {fmt(money(sum((r.amount for r in old), ZERO)))} '
+            'are more than 60 days overdue.')
+
+    position = rp.cash_position(as_at, company)
+    if position.available < ZERO:
+        problems.append(
+            f'Cash held ({fmt(position.bank)}) is less than what is owed to the ATO '
+            f'and super funds ({fmt(position.set_aside)}). Short by '
+            f'{fmt(-position.available)}.')
+    else:
+        notes.append(f'Safe to spend after setting aside tax, GST and super: '
+                     f'{fmt(position.available)}.')
+
+    turnover = rp.gst_turnover(as_at)
+    if not company.gst_registered and turnover >= 75000:
+        problems.append(
+            f'Rolling 12-month turnover is {fmt(turnover)}, over the $75,000 GST '
+            'registration threshold. Register within 21 days.')
+    notes.append(f'Rolling 12-month turnover: {fmt(turnover)}.')
+
+    print(heading(f'Health check as at {as_at}'))
+    if problems:
+        print(f'\n  {len(problems)} thing(s) need attention:\n')
+        for item in problems:
+            print(f'  ! {item}')
+    else:
+        print('\n  Nothing needs attention. Books balance and nothing is overdue.')
+    if notes:
+        print('\n  For information:')
+        for note in notes:
+            print(f'  - {note}')
+    return 1 if problems else 0
+
+
+# --------------------------------------------------------------------- parser
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog='python3 -m accounting',
+        description='Bookkeeping and ATO compliance for an Australian painting '
+                    'Pty Ltd.')
+    sub = parser.add_subparsers(dest='command', required=True)
+
+    p = sub.add_parser('setup', help='create or update the company profile')
+    p.add_argument('--name')
+    p.add_argument('--trading-name')
+    p.add_argument('--abn')
+    p.add_argument('--acn')
+    p.add_argument('--state')
+    p.add_argument('--address')
+    p.add_argument('--registered', help='ASIC registration date, YYYY-MM-DD')
+    p.add_argument('--director', dest='directors', action='append',
+                   help='director name, repeat for the second director')
+    p.add_argument('--no-gst', action='store_true', help='not registered for GST')
+    p.set_defaults(func=cmd_setup)
+
+    sub.add_parser('company', help='show the company profile').set_defaults(
+        func=cmd_company)
+
+    p = sub.add_parser('accounts', help='list the chart of accounts')
+    p.add_argument('search', nargs='?')
+    p.set_defaults(func=cmd_accounts)
+
+    contact = sub.add_parser('contact', help='customers, suppliers, subcontractors')
+    contact_sub = contact.add_subparsers(dest='action', required=True)
+    p = contact_sub.add_parser('add')
+    p.add_argument('name')
+    p.add_argument('type', choices=contacts_mod.TYPES)
+    p.add_argument('--abn')
+    p.add_argument('--gst', action='store_true', help='registered for GST')
+    p.add_argument('--email')
+    p.add_argument('--phone')
+    p.add_argument('--address')
+    p.add_argument('--notes')
+    p.set_defaults(func=cmd_contact_add)
+    p = contact_sub.add_parser('list')
+    p.add_argument('--type', choices=contacts_mod.TYPES)
+    p.set_defaults(func=cmd_contact_list)
+    p = contact_sub.add_parser('update')
+    p.add_argument('reference')
+    p.add_argument('--abn')
+    p.add_argument('--gst', dest='gst', action='store_true', default=None)
+    p.add_argument('--email')
+    p.add_argument('--phone')
+    p.add_argument('--address')
+    p.add_argument('--notes')
+    p.set_defaults(func=cmd_contact_update)
+
+    job = sub.add_parser('job', help='jobs and sites')
+    job_sub = job.add_subparsers(dest='action', required=True)
+    p = job_sub.add_parser('add')
+    p.add_argument('name')
+    p.add_argument('--contact')
+    p.add_argument('--address')
+    p.add_argument('--quoted')
+    p.add_argument('--started')
+    p.set_defaults(func=cmd_job_add)
+    job_sub.add_parser('list').set_defaults(func=cmd_job_list)
+
+    p = sub.add_parser('invoice', help='raise a customer invoice')
+    p.add_argument('contact')
+    p.add_argument('line', nargs='+',
+                   help='account:amount_ex[:description[:tax_code[:job]]]')
+    p.add_argument('--date', default=today())
+    p.add_argument('--terms', type=int, help='payment terms in days')
+    p.add_argument('--job')
+    p.add_argument('--memo')
+    p.set_defaults(func=cmd_invoice)
+
+    p = sub.add_parser('receipt', help='record money received on an invoice')
+    p.add_argument('invoice')
+    p.add_argument('amount', nargs='?', help='defaults to the full balance')
+    p.add_argument('--date', default=today())
+    p.set_defaults(func=cmd_receipt)
+
+    p = sub.add_parser('bill', help='enter a supplier or subcontractor bill')
+    p.add_argument('contact')
+    p.add_argument('line', nargs='+',
+                   help='account:amount_ex[:description[:tax_code[:job]]]')
+    p.add_argument('--date', default=today())
+    p.add_argument('--terms', type=int)
+    p.add_argument('--job')
+    p.add_argument('--memo')
+    p.set_defaults(func=cmd_bill)
+
+    p = sub.add_parser('pay-bill', help='pay a supplier bill')
+    p.add_argument('bill')
+    p.add_argument('amount', nargs='?')
+    p.add_argument('--date', default=today())
+    p.set_defaults(func=cmd_pay_bill)
+
+    p = sub.add_parser('spend', help='pay for something straight from the bank')
+    p.add_argument('account')
+    p.add_argument('amount', help='GST-inclusive amount actually paid')
+    p.add_argument('--date', default=today())
+    p.add_argument('--contact')
+    p.add_argument('--description')
+    p.add_argument('--tax-code')
+    p.add_argument('--job')
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_spend)
+
+    p = sub.add_parser('receive', help='take money in without an invoice')
+    p.add_argument('account')
+    p.add_argument('amount', help='GST-inclusive amount received')
+    p.add_argument('--date', default=today())
+    p.add_argument('--contact')
+    p.add_argument('--description')
+    p.add_argument('--tax-code')
+    p.add_argument('--job')
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_receive)
+
+    p = sub.add_parser('wages', help='pay a working director')
+    p.add_argument('director')
+    p.add_argument('gross')
+    p.add_argument('payg', help='PAYG withheld from this pay')
+    p.add_argument('--date', default=today())
+    p.add_argument('--super', dest='super', help='override the calculated super')
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_wages)
+
+    p = sub.add_parser('super', help='remit accrued super to the funds')
+    p.add_argument('amount')
+    p.add_argument('--date', default=today())
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_super)
+
+    p = sub.add_parser('dividend', help='pay a dividend to a director')
+    p.add_argument('director')
+    p.add_argument('amount')
+    p.add_argument('--date', default=today())
+    p.add_argument('--unfranked', action='store_true')
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_dividend)
+
+    p = sub.add_parser('loan', help='move money to or from a director loan account')
+    p.add_argument('director')
+    p.add_argument('amount')
+    p.add_argument('--repay', action='store_true',
+                   help='director putting money back into the company')
+    p.add_argument('--date', default=today())
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_loan)
+
+    p = sub.add_parser('depreciate', help='write down a fixed asset')
+    p.add_argument('account', help='1400 tools or 1420 vehicles')
+    p.add_argument('amount')
+    p.add_argument('--date', default=today())
+    p.set_defaults(func=cmd_depreciate)
+
+    p = sub.add_parser('journal', help='post a manual journal entry')
+    p.add_argument('memo')
+    p.add_argument('line', nargs='+', help='account:DR|CR:amount[:description]')
+    p.add_argument('--date', default=today())
+    p.set_defaults(func=cmd_journal)
+
+    p = sub.add_parser('report', help='financial and ATO reports')
+    p.add_argument('name', choices=sorted(REPORTS))
+    p.add_argument('--period', help='FY2026, 2026Q3, or 2026-01-01:2026-03-31')
+    p.add_argument('--from', dest='start')
+    p.add_argument('--to', dest='end')
+    p.add_argument('--fy', type=int, help='financial year for tpar and tax')
+    p.add_argument('--instalment', help='BAS label 5A as notified by the ATO')
+    p.add_argument('--pay', action='store_true',
+                   help='post the BAS settlement entry as well')
+    p.add_argument('--pay-date')
+    p.set_defaults(func=cmd_report)
+
+    p = sub.add_parser('calendar', help='ATO and ASIC deadlines')
+    p.add_argument('--date', help='treat this as today')
+    p.add_argument('--days', type=int, default=120)
+    p.add_argument('--detail', action='store_true')
+    p.set_defaults(func=cmd_calendar)
+
+    p = sub.add_parser('check', help='everything that needs attention right now')
+    p.add_argument('--date', help='treat this as today')
+    p.set_defaults(func=cmd_check)
+
+    return parser
+
+
+def main(argv=None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        return args.func(args)
+    except (KeyError, ValueError, LookupError) as exc:
+        print(f'error: {exc}', file=sys.stderr)
+        return 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
