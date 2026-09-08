@@ -10,6 +10,7 @@ from decimal import Decimal
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from accounting import abn  # noqa: E402
+from accounting import lodge  # noqa: E402
 from accounting import (accounts as coa, bankimport, bankrules,  # noqa: E402
                         bankstatement, calendar_au as cal, config, contacts,
                         jobs, ledger, lodgements, periods, reports as rp,
@@ -827,6 +828,78 @@ class SgcTests(BooksTestCase):
         estimate = rp.sgc_estimate('2026-04-01', '1440.00', employees=2,
                                    as_at='2026-09-08')
         self.assertEqual(estimate.cost_of_being_late, Decimal('103.12'))
+
+
+class LodgementPackTests(BooksTestCase):
+    def setUp(self):
+        super().setUp()
+        contacts.add('Jane Smith', contacts.CUSTOMER)
+        invoice = tx.create_invoice('2026-04-03', 'Jane Smith', ['4000:8000'])
+        tx.record_receipt('2026-04-20', invoice['doc_id'])
+        tx.spend_money('2026-05-07', '5100', '550.00', description='Paint')
+
+    def test_bas_pack_lists_every_label_in_form_order(self):
+        pack = lodge.bas_pack('2026-04-01', '2026-06-30', company=self.company)
+        labels = [f.label for f in pack.fields]
+        self.assertEqual(labels[:4], ['G1', 'G1 - Does the amount include GST?',
+                                      'G2', 'G3'])
+        self.assertIn('1A', labels)
+        self.assertIn('W5', labels)
+        self.assertEqual(labels[-1], '7')
+
+    def test_bas_pack_reports_whole_dollars(self):
+        pack = lodge.bas_pack('2026-04-01', '2026-06-30', company=self.company)
+        values = {f.label: f.value for f in pack.fields}
+        self.assertEqual(values['G1'], '8,800')
+        self.assertEqual(values['1A'], '800')
+        self.assertEqual(values['G11'], '550')
+        self.assertNotIn('.', values['G1'])
+
+    def test_a_refund_is_shown_at_label_8_not_7(self):
+        tx.spend_money('2026-05-08', '5100', '11000.00', description='Bulk paint')
+        pack = lodge.bas_pack('2026-04-01', '2026-06-30', company=self.company)
+        self.assertEqual(pack.fields[-1].label, '8')
+        self.assertIn('refundable', pack.fields[-1].description)
+
+    def test_wages_with_no_withholding_are_queried(self):
+        tx.manual_journal('2026-05-18', 'Wage', ['6000:DR:6000', '1000:CR:6000'])
+        pack = lodge.bas_pack('2026-04-01', '2026-06-30', company=self.company)
+        self.assertTrue(any('nothing withheld at W2' in w for w in pack.warnings))
+
+    def test_tpar_pack_blocks_on_a_missing_address(self):
+        contacts.add('J Han', contacts.SUBCONTRACTOR, abn='60280356376')
+        tx.spend_money('2026-05-11', '5000', '385.00', contact='J Han')
+        pack = lodge.tpar_pack(2026, self.company)
+        self.assertEqual(pack.rows[0][0], 'J Han')
+        self.assertEqual(pack.rows[0][1], '60 280 356 376')
+        self.assertEqual(pack.rows[0][2], 'MISSING')
+        self.assertTrue(any('no address recorded' in w for w in pack.warnings))
+
+    def test_sgc_pack_has_one_row_per_person_per_quarter(self):
+        tx.manual_journal('2026-06-18', 'Wages',
+                          ['6000:DR:12000', '1000:CR:12000'])
+        pack = lodge.sgc_pack('2026-09-08', self.company)
+        self.assertEqual(len(pack.rows), 2)
+        self.assertEqual(pack.rows[0][0], 'Q4 FY2026')
+        self.assertEqual(pack.rows[0][4], '720.00')   # shortfall each
+        self.assertEqual(pack.rows[0][6], '20.00')    # admin fee each
+
+    def test_sgc_pack_is_empty_when_super_was_paid(self):
+        tx.pay_wages('2026-06-18', 'd1', '12000', '0')
+        pack = lodge.sgc_pack('2026-09-08', self.company)
+        self.assertEqual(pack.rows, [])
+        self.assertEqual(pack.warnings, [])
+
+    def test_stp_pack_queries_wages_with_no_withholding(self):
+        tx.manual_journal('2026-06-18', 'Wages',
+                          ['6000:DR:12000', '1000:CR:12000'])
+        pack = lodge.stp_pack(2026, self.company)
+        self.assertEqual(len(pack.rows), 2)
+        self.assertTrue(any('never sent' in w for w in pack.warnings))
+
+    def test_a_pack_never_claims_to_have_lodged_anything(self):
+        pack = lodge.bas_pack('2026-04-01', '2026-06-30', company=self.company)
+        self.assertIn('Activity statements', pack.where)
 
 
 if __name__ == '__main__':

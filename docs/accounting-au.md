@@ -371,6 +371,40 @@ python3 -m accounting report tax --fy 2026                     # 법인세 추�
 
 ---
 
+## 6-0. 직접 신고하기 — `lodge`
+
+ATO 화면에 그대로 옮겨 적을 수 있는 형태로 뽑아줍니다.
+
+```bash
+python3 -m accounting lodge bas  --period 2026Q4
+python3 -m accounting lodge tpar --fy 2026
+python3 -m accounting lodge sgc                 # 연금 미납분
+python3 -m accounting lodge stp  --fy 2026      # 연말정산 확정
+```
+
+각 항목마다 **ATO 폼 라벨 순서대로**, 넣을 숫자와 그 숫자의 출처를 같이 보여줍니다.
+BAS는 센트를 버리고 정수로 나옵니다 (ATO 양식이 정수만 받습니다).
+
+**어디서 하나:**
+
+| 신고 | 위치 |
+|---|---|
+| BAS | ATO Online services for business → Lodgments → Activity statements |
+| TPAR | 같은 곳 → Taxable payments annual report |
+| SGC | 같은 곳 → Super guarantee charge statement |
+| STP | 급여 소프트웨어(Payroller/Xero)에서. ATO 사이트 아님 |
+
+> **이건 옮겨적기 도우미입니다. ATO에 아무것도 전송하지 않습니다.**
+> 신고서의 선언(declaration)에 서명하는 건 권한 있는 사람이고, 책임도 그 사람에게 있습니다.
+
+신고를 마치면 기록하세요:
+
+```bash
+python3 -m accounting lodged BAS "Q4 FY2026" --date 2026-09-10 --ref <접수번호>
+```
+
+---
+
 ## 6-1. 회계사가 이미 신고한 것 기록하기
 
 세무대리인이 대신 신고했으면 시스템은 그걸 모릅니다. 기록해두면 마감 알림에서 사라집니다.

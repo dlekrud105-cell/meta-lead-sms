@@ -14,6 +14,7 @@ from . import config
 from . import contacts as contacts_mod
 from . import jobs as jobs_mod
 from . import ledger
+from . import lodge as lodge_mod
 from . import lodgements as lodgements_mod
 from . import reports as rp
 from . import store
@@ -719,6 +720,52 @@ def cmd_rule_list(args):
     return 0
 
 
+def cmd_lodge(args):
+    company = config.load()
+    kind = args.kind
+    if kind == 'bas':
+        start, end, label = _period(args)
+        pack = lodge_mod.bas_pack(start, end, label,
+                                  payg_instalment=args.instalment or 0,
+                                  company=company)
+    elif kind == 'tpar':
+        pack = lodge_mod.tpar_pack(args.fy or fy_ending(today()), company)
+    elif kind == 'sgc':
+        pack = lodge_mod.sgc_pack(args.end or today(), company)
+    else:
+        pack = lodge_mod.stp_pack(args.fy or fy_ending(today()), company)
+
+    print(heading(pack.title))
+    print(f'  Where  {pack.where}')
+    print(f'  Due    {pack.due}')
+    print(f'  Entity {company.name}   ABN {company.abn}')
+
+    if pack.fields:
+        print('\n  Type these into the form, in this order:\n')
+        print(table(['Label', 'Field', 'Enter'],
+                    [[f.label, f.description, f.value] for f in pack.fields],
+                    align='llr'))
+        print('\n  Where each figure comes from:')
+        for item in pack.fields:
+            if item.source:
+                print(f'    {item.label:>4}  {item.source}')
+    if pack.rows:
+        print()
+        print(table(pack.row_headers, pack.rows))
+    if pack.notes:
+        print('\n  Notes:')
+        for note in pack.notes:
+            print(f'    - {note}')
+    if pack.warnings:
+        print('\n  Before you lodge:')
+        for warning in pack.warnings:
+            print(f'    ! {warning}')
+    print('\n  This is a transcription aid. Nothing has been sent to the ATO.')
+    print('  Once it is lodged, record it:  python3 -m accounting lodged '
+          f'{kind.upper()} "<period>" --date <date> --ref <receipt>')
+    return 0
+
+
 # ------------------------------------------------------------------- calendar
 
 def cmd_calendar(args):
@@ -1065,6 +1112,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--note')
     p.set_defaults(func=cmd_rule_add)
     rule_sub.add_parser('list').set_defaults(func=cmd_rule_list)
+
+    p = sub.add_parser('lodge', help='what to type into an ATO form, field by field')
+    p.add_argument('kind', choices=sorted(lodge_mod.PACKS))
+    p.add_argument('--period', help='FY2026, 2026Q4, or a date range')
+    p.add_argument('--from', dest='start')
+    p.add_argument('--to', dest='end')
+    p.add_argument('--fy', type=int)
+    p.add_argument('--instalment', help='BAS label 5A as notified by the ATO')
+    p.set_defaults(func=cmd_lodge)
 
     p = sub.add_parser('lodged', help='record something as lodged with the ATO')
     p.add_argument('kind', help='BAS, TPAR, STP, TAX_RETURN or ASIC')
