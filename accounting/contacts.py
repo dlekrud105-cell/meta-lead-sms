@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from . import abn as abn_mod
 from . import store
 
 CUSTOMER, SUPPLIER, SUBCONTRACTOR, DIRECTOR, ATO, OTHER = (
@@ -53,9 +54,21 @@ class Contact:
         }
 
     @property
+    def abn_is_valid(self) -> bool:
+        return abn_mod.is_valid_abn(self.abn)
+
+    @property
+    def abn_formatted(self) -> str:
+        return abn_mod.format_abn(self.abn)
+
+    @property
     def withholding_applies(self) -> bool:
-        """No ABN quoted means 47% has to be withheld from the payment."""
-        return not (self.abn_quoted and self.abn)
+        """47% is withheld unless a valid ABN has been quoted.
+
+        An ABN that fails its checksum has not been validly quoted, so it is
+        treated the same as no ABN at all.
+        """
+        return not (self.abn_quoted and self.abn_is_valid)
 
 
 def all_contacts() -> list:
@@ -86,9 +99,11 @@ def add(name, type=OTHER, abn='', gst_registered=False, email='', phone='',
         raise KeyError(f'contact {name!r} already exists as {existing.contact_id}')
     if type not in TYPES:
         raise ValueError(f'contact type must be one of {", ".join(TYPES)}')
-    abn = str(abn or '').replace(' ', '')
-    if abn and not (abn.isdigit() and len(abn) == 11):
-        raise ValueError(f'ABN {abn!r} should be 11 digits')
+    abn = abn_mod.normalise(abn)
+    if abn:
+        problem = abn_mod.check_abn(abn)
+        if problem:
+            raise ValueError(problem)
     contact = Contact(
         contact_id=store.CONTACTS.next_sequence('contact_id', 'C', width=4),
         name=name, type=type, abn=abn,
@@ -113,6 +128,11 @@ def update(reference, **changes) -> Contact:
             for key, value in changes.items():
                 if key in ('abn_quoted', 'gst_registered'):
                     value = 'yes' if value else 'no'
+                if key == 'abn' and value:
+                    value = abn_mod.normalise(value)
+                    problem = abn_mod.check_abn(value)
+                    if problem:
+                        raise ValueError(problem)
                 row[key] = value
             updated = Contact.from_row(row)
             break

@@ -19,7 +19,8 @@ from . import reports as rp
 from . import store
 from . import transactions as tx
 from .money import ZERO, fmt, money
-from .periods import fy_ending, fy_range, parse_date, quarter_of, resolve_period
+from .periods import (fy_ending, fy_range, parse_date, quarter_of,
+                      quarters_in_fy, resolve_period)
 from .render import heading, table
 
 
@@ -145,7 +146,8 @@ def cmd_contact_add(args):
 
 
 def cmd_contact_list(args):
-    rows = [[c.contact_id, c.name, c.type, c.abn or '-',
+    rows = [[c.contact_id, c.name, c.type,
+             (c.abn_formatted + ('' if c.abn_is_valid else ' !')) if c.abn else '-',
              'yes' if c.gst_registered else 'no', c.phone or c.email or '']
             for c in contacts_mod.all_contacts()
             if not args.type or c.type == args.type]
@@ -403,7 +405,7 @@ def _report_tpar(args):
     report = rp.tpar(fy)
     print(heading(f'Taxable payments annual report  FY{report.fy}'))
     print(f'  Payments made {report.start} to {report.end}   Due {report.due}')
-    rows = [[r.contact.name, r.contact.abn or 'MISSING', fmt(r.gross_paid),
+    rows = [[r.contact.name, r.contact.abn_formatted or 'MISSING', fmt(r.gross_paid),
              fmt(r.gst), fmt(r.tax_withheld), '; '.join(r.issues)]
             for r in report.rows]
     print(table(['Payee', 'ABN', 'Gross paid', 'GST', 'Withheld', 'Issues'],
@@ -538,6 +540,41 @@ def _report_super(args):
     print('\n  Pay runs from 2026-07-01 are under Pay Day Super: the money must '
           'reach the fund within 7 days of the pay day, not at the end of the '
           'quarter.')
+
+    company = config.load()
+    for fy in rp.financial_years(as_at):
+        fy_start, fy_end = fy_range(fy)
+        gap = rp.super_shortfall(fy_start, min(fy_end, parse_date(as_at)))
+        if gap.shortfall <= ZERO:
+            continue
+        # Attribute the shortfall to the quarter the wages were actually paid.
+        for quarter in quarters_in_fy(fy):
+            wages = ZERO
+            for account in coa.by_role('wages'):
+                wages += ledger.net(account.code, quarter.start, quarter.end)
+            if wages <= ZERO:
+                continue
+            shortfall = min(gap.shortfall, money(wages * company.super_rate))
+            estimate = rp.sgc_estimate(quarter.start, shortfall,
+                                       employees=len(company.directors) or 1,
+                                       as_at=as_at, company=company)
+            print(heading(f'Superannuation guarantee charge - {estimate.quarter_label}'))
+            print(table(['Item', 'Amount'], [
+                ['Super shortfall', fmt(estimate.shortfall)],
+                [f'Nominal interest at 10% for {estimate.days_of_interest} days',
+                 fmt(estimate.nominal_interest)],
+                [f'Administration fee, {estimate.employees} employees',
+                 fmt(estimate.admin_fee)],
+                ['TOTAL SGC (none of it deductible)', fmt(estimate.total)],
+            ], align='lr'))
+            print(f'\n  SGC statement was due {estimate.statement_due}. Paying '
+                  'the fund now does not undo it - the statement still has to '
+                  'be lodged, and interest keeps running until it is.')
+            print(f'  Being late costs {fmt(estimate.cost_of_being_late)} on top '
+                  'of the super itself, plus the deduction you lose on '
+                  f'{fmt(estimate.shortfall)}.')
+            print('  The SGC is one of the amounts a director is personally '
+                  'liable for under a director penalty notice.')
     return 0
 
 
@@ -750,8 +787,7 @@ def cmd_check(args):
             f'FY{fy}: wages of {fmt(gap.wages)} were paid but only '
             f'{fmt(gap.recognised)} of superannuation has been recognised. At '
             f'{company.super_rate:.0%} it should be {fmt(gap.expected)}, so '
-            f'{fmt(gap.shortfall)} is missing. Unpaid super is not deductible '
-            'and has to be reported on an SGC statement.')
+            f'{fmt(gap.shortfall)} is missing.')
 
     for obligation in rp.late_super(as_at, company):
         problems.append(
@@ -760,7 +796,12 @@ def cmd_check(args):
             'not deductible and has to go on an SGC statement.')
 
     for contact in contacts_mod.all_contacts():
-        if contact.type == contacts_mod.SUBCONTRACTOR and not contact.abn:
+        if contact.abn and not contact.abn_is_valid:
+            problems.append(
+                f'{contact.name} ({contact.contact_id}) has ABN {contact.abn} on '
+                'file, which fails the ABN checksum. Until a valid one is '
+                'quoted, 47% has to be withheld from their payments.')
+        elif contact.type == contacts_mod.SUBCONTRACTOR and not contact.abn:
             problems.append(
                 f'{contact.name} ({contact.contact_id}) is a subcontractor with no '
                 'ABN on file: 47% withholding applies and the TPAR will be short.')

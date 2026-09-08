@@ -380,6 +380,8 @@ class TparRow:
         problems = []
         if not self.contact.abn:
             problems.append('no ABN recorded')
+        elif not self.contact.abn_is_valid:
+            problems.append('ABN fails its checksum')
         if not self.contact.address:
             problems.append('no address recorded')
         return problems
@@ -770,6 +772,65 @@ def super_shortfalls(as_at, company=None) -> list:
 
 def late_super(as_at, company=None) -> list:
     return [o for o in super_obligations(as_at, company) if o.is_late(as_at)]
+
+
+# The superannuation guarantee charge, for super that missed its deadline.
+SGC_INTEREST_RATE = Decimal('0.10')      # nominal interest, 10% a year
+SGC_ADMIN_FEE_PER_EMPLOYEE = Decimal('20.00')  # per employee per quarter
+
+
+@dataclass
+class SgcEstimate:
+    quarter_label: str
+    quarter_start: date
+    shortfall: Decimal
+    employees: int
+    days_of_interest: int
+    statement_due: date
+
+    @property
+    def nominal_interest(self) -> Decimal:
+        return money(self.shortfall * SGC_INTEREST_RATE
+                     * Decimal(self.days_of_interest) / Decimal(365))
+
+    @property
+    def admin_fee(self) -> Decimal:
+        return money(SGC_ADMIN_FEE_PER_EMPLOYEE * self.employees)
+
+    @property
+    def total(self) -> Decimal:
+        return money(self.shortfall + self.nominal_interest + self.admin_fee)
+
+    @property
+    def cost_of_being_late(self, ) -> Decimal:
+        """Interest and fee, none of which would have been payable on time."""
+        return money(self.nominal_interest + self.admin_fee)
+
+
+def sgc_estimate(quarter_start, shortfall, employees=1, as_at=None,
+                 company=None) -> SgcEstimate:
+    """What unpaid super turns into once its deadline passes.
+
+    Super paid late stops being an ordinary deductible contribution and
+    becomes the superannuation guarantee charge: the shortfall, plus nominal
+    interest running from the START of the quarter, plus an administration fee
+    per employee. None of the SGC is deductible, and it has to be reported on
+    an SGC statement rather than simply paid to the fund.
+
+    An estimate only - the ATO calculates the charge on salary and wages
+    rather than ordinary time earnings, and adds its own penalties for a late
+    statement.
+    """
+    quarter_start = parse_date(quarter_start)
+    as_at = parse_date(as_at) if as_at else date.today()
+    quarter = quarter_of(quarter_start)
+    # The SGC statement is due one month after the contribution deadline.
+    statement_due = date.fromordinal(quarter.super_due.toordinal() + 31)
+    return SgcEstimate(
+        quarter_label=quarter.label, quarter_start=quarter.start,
+        shortfall=money(shortfall), employees=max(1, int(employees)),
+        days_of_interest=max(0, (as_at - quarter.start).days),
+        statement_due=statement_due)
 
 
 @dataclass

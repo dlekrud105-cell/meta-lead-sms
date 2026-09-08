@@ -9,6 +9,7 @@ from decimal import Decimal
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from accounting import abn  # noqa: E402
 from accounting import (accounts as coa, bankimport, bankrules,  # noqa: E402
                         bankstatement, calendar_au as cal, config, contacts,
                         jobs, ledger, lodgements, periods, reports as rp,
@@ -756,6 +757,76 @@ class SuperShortfallTests(BooksTestCase):
     def test_a_proper_pay_run_leaves_no_shortfall(self):
         tx.pay_wages('2026-06-18', 'd1', '12000', '0')
         self.assertEqual(rp.super_shortfalls('2026-09-08', self.company), [])
+
+
+class AbnTests(unittest.TestCase):
+    def test_real_abns_pass_the_checksum(self):
+        for value in ['51 824 753 556',   # the ATO's own published example
+                      '74694601413',      # YOUR PAINTER SERVICE PTY LTD
+                      '60280356376']:     # a subcontractor
+            self.assertTrue(abn.is_valid_abn(value), value)
+
+    def test_a_single_digit_typo_is_caught(self):
+        self.assertTrue(abn.is_valid_abn('60280356376'))
+        self.assertFalse(abn.is_valid_abn('60280356377'))
+        self.assertFalse(abn.is_valid_abn('60280356386'))
+
+    def test_wrong_length_and_leading_zero_are_rejected(self):
+        self.assertFalse(abn.is_valid_abn('123'))
+        self.assertFalse(abn.is_valid_abn('012345678901'))
+        self.assertFalse(abn.is_valid_abn('06280356376'))
+
+    def test_formatting_matches_how_the_ato_prints_it(self):
+        self.assertEqual(abn.format_abn('74694601413'), '74 694 601 413')
+        self.assertEqual(abn.format_acn('694601413'), '694 601 413')
+
+    def test_check_abn_explains_the_problem(self):
+        self.assertEqual(abn.check_abn('51824753556'), '')
+        self.assertIn('11 digits', abn.check_abn('123'))
+        self.assertIn('checksum', abn.check_abn('60280356377'))
+
+
+class ContactAbnTests(BooksTestCase):
+    def test_a_contact_cannot_be_given_an_impossible_abn(self):
+        with self.assertRaises(ValueError):
+            contacts.add('Dodgy Trades', contacts.SUBCONTRACTOR, abn='60280356377')
+
+    def test_a_valid_abn_switches_off_withholding(self):
+        good = contacts.add('J Han', contacts.SUBCONTRACTOR, abn='60280356376')
+        self.assertFalse(good.withholding_applies)
+
+    def test_an_invalid_abn_on_file_still_means_withholding(self):
+        # Written straight to storage, as a bad import might.
+        contact = contacts.add('Sloppy Co', contacts.SUBCONTRACTOR)
+        rows = contacts.store.CONTACTS.read()
+        for row in rows:
+            if row['contact_id'] == contact.contact_id:
+                row['abn'] = '60280356377'
+                row['abn_quoted'] = 'yes'
+        contacts.store.CONTACTS.write_all(rows)
+        reloaded = contacts.get(contact.contact_id)
+        self.assertFalse(reloaded.abn_is_valid)
+        self.assertTrue(reloaded.withholding_applies)
+
+
+class SgcTests(BooksTestCase):
+    def test_the_charge_adds_interest_from_the_start_of_the_quarter(self):
+        estimate = rp.sgc_estimate('2026-04-01', '1440.00', employees=2,
+                                   as_at='2026-09-08')
+        self.assertEqual(estimate.quarter_label, 'Q4 FY2026')
+        self.assertEqual(estimate.days_of_interest, 160)
+        self.assertEqual(estimate.admin_fee, Decimal('40.00'))
+        self.assertEqual(estimate.nominal_interest, Decimal('63.12'))
+        self.assertEqual(estimate.total, Decimal('1543.12'))
+
+    def test_the_statement_is_due_a_month_after_the_contribution(self):
+        estimate = rp.sgc_estimate('2026-04-01', '1000', as_at='2026-09-08')
+        self.assertEqual(estimate.statement_due, date(2026, 8, 28))
+
+    def test_being_late_is_what_costs_extra(self):
+        estimate = rp.sgc_estimate('2026-04-01', '1440.00', employees=2,
+                                   as_at='2026-09-08')
+        self.assertEqual(estimate.cost_of_being_late, Decimal('103.12'))
 
 
 if __name__ == '__main__':
