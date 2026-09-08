@@ -36,7 +36,8 @@ python3 -m accounting report bas --period 2026Q3
 python3 -m accounting report tpar --fy 2026
 ```
 
-**→ 전체 사용법은 [`docs/accounting-au.md`](docs/accounting-au.md)** 를 보세요.
+**→ 전체 사용법은 [`docs/accounting-au.md`](docs/accounting-au.md)**
+**→ 앱 통합/인계는 [`docs/HANDOVER.md`](docs/HANDOVER.md)**
 
 담당하는 것: **CommBank 명세서 자동 입력**(은행 합계와 대조 검증) · 복식부기 원장 ·
 인보이스/청구서 · cash/accruals GST · BAS 라벨 자동집계 ·
