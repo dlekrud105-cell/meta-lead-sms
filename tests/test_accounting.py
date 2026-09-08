@@ -959,5 +959,86 @@ class CashflowTests(BooksTestCase):
         self.assertEqual(april.net, Decimal('-550.00'))
 
 
+class FinancedAssetTests(BooksTestCase):
+    """Modelled on a real vehicle contract: taxable items, GST, stamp duty."""
+
+    TAXABLE = '47250.91'
+    GST = '4725.09'
+    GST_FREE = '1769.00'      # stamp duty 1,700 + registration 69
+    TOTAL = Decimal('53745.00')
+
+    def buy(self, **kwargs):
+        defaults = dict(date='2026-09-18', asset_account='1420',
+                        taxable_ex=self.TAXABLE, gst=self.GST,
+                        gst_free=self.GST_FREE, deposit='2000.00',
+                        financed='51745.00', description='Van')
+        defaults.update(kwargs)
+        return tx.buy_asset(**defaults)
+
+    def test_the_asset_carries_its_gst_free_costs(self):
+        result = self.buy()
+        # Stamp duty and registration are part of the cost, not an expense.
+        self.assertEqual(result['cost'], Decimal('49019.91'))
+        self.assertEqual(result['total'], self.TOTAL)
+        self.assertEqual(ledger.balance('1420'), Decimal('49019.91'))
+
+    def test_gst_is_claimed_in_full_not_spread_over_repayments(self):
+        self.buy()
+        self.assertEqual(ledger.balance('1110'), Decimal('4725.09'))
+
+    def test_the_financed_balance_becomes_a_liability(self):
+        self.buy()
+        self.assertEqual(ledger.balance('2800'), Decimal('51745.00'))
+        self.assertEqual(ledger.balance('1000'), Decimal('-2000.00'))
+
+    def test_the_settlement_has_to_add_up_to_the_invoice(self):
+        with self.assertRaises(tx.TransactionError):
+            self.buy(deposit='2000.00', financed='40000.00')
+
+    def test_a_cash_basis_bas_claims_the_credit_in_the_quarter_of_delivery(self):
+        self.buy()
+        report = rp.bas('2026-07-01', '2026-09-30')
+        self.assertEqual(report.gst_on_purchases, Decimal('4725.09'))
+        self.assertEqual(report.g10, Decimal('51976.00'))  # taxable incl GST
+        self.assertLess(report.net_amount, Decimal('0'))   # a refund
+
+    def test_a_vehicle_over_the_car_limit_is_flagged(self):
+        result = self.buy(taxable_ex='80000', gst='8000', gst_free='0',
+                          deposit='88000', financed='0')
+        self.assertTrue(any('car limit' in w for w in result['warnings']))
+
+    def test_this_vehicle_is_under_the_car_limit(self):
+        self.assertEqual(self.buy()['warnings'], [])
+
+    def test_only_the_interest_side_of_a_repayment_is_an_expense(self):
+        self.buy()
+        result = tx.finance_payment('2026-10-18', '1000.00', '250.00')
+        self.assertEqual(result['principal'], Decimal('750.00'))
+        self.assertEqual(ledger.balance('2800'), Decimal('50995.00'))
+        self.assertEqual(ledger.balance('6900'), Decimal('250.00'))
+
+    def test_interest_cannot_exceed_the_repayment(self):
+        self.buy()
+        with self.assertRaises(tx.TransactionError):
+            tx.finance_payment('2026-10-18', '1000.00', '1200.00')
+
+    def test_repayments_never_touch_gst(self):
+        self.buy()
+        before = ledger.balance('1110')
+        tx.finance_payment('2026-10-18', '1000.00', '250.00')
+        self.assertEqual(ledger.balance('1110'), before)
+
+    def test_an_asset_account_is_required(self):
+        with self.assertRaises(tx.TransactionError):
+            self.buy(asset_account='5100')
+
+    def test_the_books_still_balance_afterwards(self):
+        self.buy()
+        tx.finance_payment('2026-10-18', '1000.00', '250.00')
+        tx.record_depreciation('2027-06-30', '1420', '7343.00')
+        sheet = rp.balance_sheet('2027-06-30')
+        self.assertTrue(sheet.balances, f'out by {sheet.out_by}')
+
+
 if __name__ == '__main__':
     unittest.main()

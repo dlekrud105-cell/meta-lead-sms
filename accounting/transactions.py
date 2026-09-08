@@ -35,10 +35,18 @@ DIRECTOR_LOAN = 'DIRECTOR_LOAN'
 DEPRECIATION = 'DEPRECIATION'
 MANUAL = 'JOURNAL'
 BANK = 'BANK'          # posted straight from an imported bank statement
+ASSET_PURCHASE = 'ASSET'
+FINANCE_PAYMENT = 'FINANCE'
 
 # Entries where money moved without an invoice or bill behind it. These are
 # already cash, so the cash-basis BAS takes them at face value.
-DIRECT_CASH_SOURCES = (SPEND, RECEIVE, BANK)
+#
+# ASSET_PURCHASE is here deliberately. Under a chattel mortgage the financier
+# pays the supplier in full on the buyer's behalf and title passes straight
+# away, so a cash-basis taxpayer is treated as having paid for the asset at
+# that point and claims the whole GST credit in that quarter rather than
+# dribbling it out across the repayments.
+DIRECT_CASH_SOURCES = (SPEND, RECEIVE, BANK, ASSET_PURCHASE)
 
 # Payments that put money in a subcontractor's hands, for the TPAR.
 PAYMENT_SOURCES = (BILL_PAYMENT, SPEND, BANK)
@@ -568,6 +576,122 @@ def director_loan(date, director, amount, direction='to_director', bank=None,
         date=date, memo=memo or f'Director loan {direction} - {person.name}',
         source=DIRECTOR_LOAN, lines=lines))
     return {'entry_id': entry_id, 'amount': amount, 'direction': direction}
+
+
+# ------------------------------------------------------------- financed assets
+
+def buy_asset(date, asset_account, taxable_ex, gst=None, gst_free=0, deposit=0,
+              financed=0, finance_account='2800', contact='', description='',
+              bank=None, company=None) -> dict:
+    """Buy a capital asset, optionally on finance.
+
+    A vehicle invoice is not one taxable amount. Stamp duty and registration
+    carry no GST, so they are passed separately as `gst_free` and still form
+    part of the asset's cost. Under a chattel mortgage the company owns the
+    asset from the start and the finance is a separate loan, which is why the
+    whole cost is capitalised here rather than expensed as repayments are made.
+    """
+    company = company or config.load()
+    account = coa.get(str(asset_account))
+    if account.role != 'fixed_asset':
+        raise TransactionError(
+            f'{account.code} {account.name} is not a fixed asset account')
+
+    taxable_ex = money(taxable_ex)
+    gst = money(gst) if gst is not None else money(taxable_ex * company.rate('gst_rate'))
+    gst_free = money(gst_free)
+    deposit = money(deposit)
+    financed = money(financed)
+    cost = money(taxable_ex + gst_free)
+    total = money(taxable_ex + gst + gst_free)
+
+    settled = money(deposit + financed)
+    if settled != total:
+        raise TransactionError(
+            f'deposit {deposit} plus finance {financed} is {settled}, but the '
+            f'invoice totals {total}')
+
+    supplier = contacts_mod.find(contact)
+    contact_id = supplier.contact_id if supplier else ''
+    bank_code = _bank(company, bank)
+
+    journal_lines = [ledger.Line(account=account.code, debit=taxable_ex,
+                                 description=description or account.name,
+                                 tax_code='CAP', contact=contact_id)]
+    if gst_free != ZERO:
+        journal_lines.append(ledger.debit(
+            account.code, gst_free,
+            description='Stamp duty and registration (GST-free)',
+            contact=contact_id))
+    if gst != ZERO:
+        journal_lines.append(ledger.debit(_role('gst_paid'), gst,
+                                          description='GST on capital purchase',
+                                          contact=contact_id))
+    if deposit != ZERO:
+        journal_lines.append(ledger.credit(bank_code, deposit,
+                                           description='Deposit',
+                                           contact=contact_id))
+    if financed != ZERO:
+        finance = coa.get(str(finance_account))
+        if finance.role != 'finance':
+            raise TransactionError(
+                f'{finance.code} {finance.name} is not a finance account')
+        journal_lines.append(ledger.credit(finance.code, financed,
+                                           description='Financed balance',
+                                           contact=contact_id))
+
+    entry_id = ledger.post(ledger.Entry(
+        date=date, memo=description or f'Purchase of {account.name}',
+        source=ASSET_PURCHASE, lines=journal_lines))
+
+    warnings = []
+    if cost > company.car_limit:
+        warnings.append(
+            f'Cost of {cost} is above the car limit of {company.car_limit}. If '
+            'this vehicle IS a car for tax purposes, depreciation is capped at '
+            f'the limit and the GST credit at {money(company.car_limit / 11)}. '
+            'It is not a car if it is designed to carry a load of one tonne or '
+            'more, or is not designed principally to carry passengers.')
+    return {'entry_id': entry_id, 'cost': cost, 'gst': gst, 'total': total,
+            'deposit': deposit, 'financed': financed, 'warnings': warnings}
+
+
+def finance_payment(date, amount, interest, finance_account='2800', bank=None,
+                    description='', company=None) -> dict:
+    """A finance repayment, split between principal and interest.
+
+    Only the interest is deductible. The principal repays the loan and has
+    already been accounted for in the asset's cost, so expensing the whole
+    repayment would claim the vehicle twice.
+    """
+    company = company or config.load()
+    finance = coa.get(str(finance_account))
+    if finance.role != 'finance':
+        raise TransactionError(f'{finance.code} is not a finance account')
+    amount = money(amount)
+    interest = money(interest)
+    if amount <= ZERO:
+        raise TransactionError('repayment must be positive')
+    if interest < ZERO or interest > amount:
+        raise TransactionError('interest must be between zero and the repayment')
+    principal = money(amount - interest)
+    bank_code = _bank(company, bank)
+
+    journal_lines = []
+    if principal != ZERO:
+        journal_lines.append(ledger.debit(finance.code, principal,
+                                          description='Principal'))
+    if interest != ZERO:
+        journal_lines.append(ledger.Line(account='6900', debit=interest,
+                                         description='Finance interest',
+                                         tax_code='INP'))
+    journal_lines.append(ledger.credit(bank_code, amount,
+                                       description=description or 'Finance repayment'))
+    entry_id = ledger.post(ledger.Entry(
+        date=date, memo=description or f'Repayment - {finance.name}',
+        source=FINANCE_PAYMENT, lines=journal_lines))
+    return {'entry_id': entry_id, 'principal': principal, 'interest': interest,
+            'balance': ledger.balance(finance.code, date)}
 
 
 # ------------------------------------------------------------------ adjustments

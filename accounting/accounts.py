@@ -103,6 +103,11 @@ CHART: list[Account] = [
        note='Credit = company owes the director. Debit = Division 7A risk.'),
     _a('2700', 'Customer Deposits', LIABILITY, 'NT',
        note='Deposits taken before work starts. GST is payable when received.'),
+    _a('2800', 'Chattel Mortgage - Motor Vehicle', LIABILITY, 'NT', role='finance',
+       note='Under a chattel mortgage the company owns the vehicle outright '
+            'and this is the loan secured over it. Repayments split between '
+            'principal here and interest at 6900.'),
+    _a('2810', 'Equipment Finance', LIABILITY, 'NT', role='finance'),
 
     # ------------------------------------------------------------------ equity
     _a('3000', 'Share Capital', EQUITY, 'NT'),

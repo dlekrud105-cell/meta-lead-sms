@@ -22,6 +22,12 @@ DEFAULT_RATES = {
     # Withholding when a supplier does not quote an ABN: top rate, no levy.
     'no_abn_withholding_rate': '0.47',
     'gst_rate': '0.10',
+    # Car depreciation limit for 2025-26. A vehicle costing more than this is
+    # only depreciable up to the limit, and the GST credit is capped at 1/11
+    # of it. Vehicles designed to carry a load of one tonne or more, and
+    # vehicles not designed principally to carry passengers, are not 'cars'
+    # for this purpose and the limit does not apply to them.
+    'car_limit': '69674',
 }
 
 
@@ -91,6 +97,10 @@ class Company:
     @property
     def cash_basis(self) -> bool:
         return self.gst_basis.strip().lower() == 'cash'
+
+    @property
+    def car_limit(self) -> Decimal:
+        return self.rate('car_limit')
 
     # -------------------------------------------------------------- directors
     def director(self, key: str) -> Director:

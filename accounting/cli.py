@@ -281,6 +281,34 @@ def cmd_loan(args):
     return 0
 
 
+def cmd_buy_asset(args):
+    result = tx.buy_asset(args.date, args.account, args.taxable,
+                          gst=args.gst, gst_free=args.gst_free or 0,
+                          deposit=args.deposit or 0, financed=args.financed or 0,
+                          finance_account=args.finance_account,
+                          contact=args.contact or '',
+                          description=args.description or '', bank=args.bank)
+    print(f'{result["entry_id"]}  asset cost {fmt(result["cost"])} '
+          f'+ GST {fmt(result["gst"])} = {fmt(result["total"])}')
+    print(f'  Paid now {fmt(result["deposit"])}   financed '
+          f'{fmt(result["financed"])}')
+    _warn(result)
+    print('  The GST is claimable in full on the BAS for the quarter the asset '
+          'was delivered, even on a cash basis, because a chattel mortgage is '
+          'an outright purchase funded by a separate loan.')
+    return 0
+
+
+def cmd_finance_payment(args):
+    result = tx.finance_payment(args.date, args.amount, args.interest,
+                                finance_account=args.account, bank=args.bank,
+                                description=args.description or '')
+    print(f'{result["entry_id"]}  principal {fmt(result["principal"])}  '
+          f'interest {fmt(result["interest"])}  '
+          f'loan balance {fmt(result["balance"])}')
+    return 0
+
+
 def cmd_depreciate(args):
     result = tx.record_depreciation(args.date, args.account, args.amount)
     print(f'{result["entry_id"]}  {fmt(result["amount"])} depreciation')
@@ -1097,6 +1125,31 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--date', default=today())
     p.add_argument('--bank')
     p.set_defaults(func=cmd_loan)
+
+    p = sub.add_parser('buy-asset', help='buy a vehicle or equipment, on finance or not')
+    p.add_argument('account', help='1400 tools or 1420 vehicles')
+    p.add_argument('taxable', help='GST-exclusive amount of the taxable items')
+    p.add_argument('--gst', help='GST on the invoice; calculated if omitted')
+    p.add_argument('--gst-free', help='stamp duty, registration and other '
+                                      'GST-free items on the same invoice')
+    p.add_argument('--deposit', help='paid now from the bank')
+    p.add_argument('--financed', help='balance under the finance agreement')
+    p.add_argument('--finance-account', default='2800')
+    p.add_argument('--contact')
+    p.add_argument('--description')
+    p.add_argument('--date', default=today())
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_buy_asset)
+
+    p = sub.add_parser('finance-payment',
+                       help='a finance repayment, split principal and interest')
+    p.add_argument('amount', help='total repayment')
+    p.add_argument('interest', help='interest portion from the finance schedule')
+    p.add_argument('--account', default='2800')
+    p.add_argument('--date', default=today())
+    p.add_argument('--description')
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_finance_payment)
 
     p = sub.add_parser('depreciate', help='write down a fixed asset')
     p.add_argument('account', help='1400 tools or 1420 vehicles')
