@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+from decimal import Decimal
 from datetime import date
 
 from . import accounts as coa
+from . import amortise
 from . import bankimport
 from . import bankrules
 from . import bankstatement
@@ -281,17 +283,33 @@ def cmd_loan(args):
     return 0
 
 
+def cmd_asset_deposit(args):
+    result = tx.pay_asset_deposit(args.date, args.amount,
+                                  contact=args.contact or '',
+                                  description=args.description or '',
+                                  bank=args.bank)
+    print(f'{result["entry_id"]}  {fmt(result["amount"])} held on 1210 '
+          'Deposits Paid on Assets')
+    print('  No GST is claimed and no depreciation starts until the asset is '
+          'delivered. Record the purchase then with buy-asset '
+          '--deposit-account 1210.')
+    return 0
+
+
 def cmd_buy_asset(args):
     result = tx.buy_asset(args.date, args.account, args.taxable,
                           gst=args.gst, gst_free=args.gst_free or 0,
                           deposit=args.deposit or 0, financed=args.financed or 0,
                           finance_account=args.finance_account,
                           contact=args.contact or '',
-                          description=args.description or '', bank=args.bank)
+                          description=args.description or '', bank=args.bank,
+                          deposit_account=args.deposit_account)
     print(f'{result["entry_id"]}  asset cost {fmt(result["cost"])} '
           f'+ GST {fmt(result["gst"])} = {fmt(result["total"])}')
     print(f'  Paid now {fmt(result["deposit"])}   financed '
           f'{fmt(result["financed"])}')
+    for note in result.get('notes', []):
+        print(f'  - {note}')
     _warn(result)
     print('  The GST is claimable in full on the BAS for the quarter the asset '
           'was delivered, even on a cash basis, because a chattel mortgage is '
@@ -299,7 +317,59 @@ def cmd_buy_asset(args):
     return 0
 
 
+def cmd_finance_schedule(args):
+    if args.show:
+        built = amortise.load(args.account)
+        if built is None:
+            print(f'No schedule saved for account {args.account}.', file=sys.stderr)
+            return 2
+    else:
+        rate = Decimal(str(args.rate))
+        if rate > 1:
+            rate = rate / 100          # accept 9.3 as well as 0.093
+        built = amortise.save(args.account, args.principal, rate, args.months,
+                              args.start, balloon=args.balloon or 0,
+                              payment=args.payment,
+                              description=args.description or '')
+    account = coa.get(args.account)
+    print(heading(f'{account.code} {account.name}'))
+    print(f'  Borrowed {fmt(built.principal)} at {built.annual_rate:.2%} over '
+          f'{built.months} months'
+          + (f', balloon {fmt(built.balloon)}' if built.balloon else ''))
+    print(f'  Repayment {fmt(built.payment)} a month   '
+          f'total interest {fmt(built.total_interest)}   '
+          f'total repaid {fmt(built.total_paid)}')
+    rows = [[i.number, i.due.isoformat(), fmt(i.payment), fmt(i.interest),
+             fmt(i.principal), fmt(i.balance)] for i in built.instalments
+            if args.all or i.number <= (args.rows or 12)]
+    print()
+    print(table(['#', 'Due', 'Payment', 'Interest', 'Principal', 'Balance'],
+                rows, align='llrrrr'))
+    if not args.all and built.months > (args.rows or 12):
+        print(f'    ... {built.months - (args.rows or 12)} more. Use --all to '
+              'see them.')
+    print('\n  Only the interest column is deductible. Record each repayment '
+          'with:\n    python3 -m accounting finance-payment --auto '
+          f'--account {account.code} --date <date>')
+    return 0
+
+
 def cmd_finance_payment(args):
+    if args.auto:
+        built = amortise.load(args.account)
+        if built is None:
+            print(f'No schedule saved for {args.account}. Create one with '
+                  '`finance-schedule` first.', file=sys.stderr)
+            return 2
+        instalment = (built.at(args.instalment) if args.instalment
+                      else built.on(args.date))
+        args.amount = str(instalment.payment)
+        args.interest = str(instalment.interest)
+        print(f'  Instalment #{instalment.number} due {instalment.due}')
+    if args.amount is None or args.interest is None:
+        print('error: give the amount and interest, or use --auto',
+              file=sys.stderr)
+        return 2
     result = tx.finance_payment(args.date, args.amount, args.interest,
                                 finance_account=args.account, bank=args.bank,
                                 description=args.description or '')
@@ -1135,16 +1205,45 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--deposit', help='paid now from the bank')
     p.add_argument('--financed', help='balance under the finance agreement')
     p.add_argument('--finance-account', default='2800')
+    p.add_argument('--deposit-account',
+                   help='where a deposit already paid is sitting, e.g. 1210')
     p.add_argument('--contact')
     p.add_argument('--description')
     p.add_argument('--date', default=today())
     p.add_argument('--bank')
     p.set_defaults(func=cmd_buy_asset)
 
+    p = sub.add_parser('asset-deposit',
+                       help='pay a deposit on something not delivered yet')
+    p.add_argument('amount')
+    p.add_argument('--contact')
+    p.add_argument('--description')
+    p.add_argument('--date', default=today())
+    p.add_argument('--bank')
+    p.set_defaults(func=cmd_asset_deposit)
+
+    p = sub.add_parser('finance-schedule',
+                       help='work out the repayment schedule for a loan')
+    p.add_argument('--account', default='2800')
+    p.add_argument('--principal')
+    p.add_argument('--rate', help='9.3 or 0.093')
+    p.add_argument('--months', type=int)
+    p.add_argument('--start', help='date of the first repayment')
+    p.add_argument('--balloon', help='residual owing at the end, if any')
+    p.add_argument('--payment', help='override the calculated repayment')
+    p.add_argument('--description')
+    p.add_argument('--rows', type=int, help='how many instalments to show')
+    p.add_argument('--all', action='store_true')
+    p.add_argument('--show', action='store_true', help='show the saved schedule')
+    p.set_defaults(func=cmd_finance_schedule)
+
     p = sub.add_parser('finance-payment',
                        help='a finance repayment, split principal and interest')
-    p.add_argument('amount', help='total repayment')
-    p.add_argument('interest', help='interest portion from the finance schedule')
+    p.add_argument('amount', nargs='?', help='total repayment')
+    p.add_argument('interest', nargs='?', help='interest portion')
+    p.add_argument('--auto', action='store_true',
+                   help='take the split from the saved schedule')
+    p.add_argument('--instalment', type=int, help='instalment number, with --auto')
     p.add_argument('--account', default='2800')
     p.add_argument('--date', default=today())
     p.add_argument('--description')

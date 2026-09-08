@@ -17,7 +17,7 @@ from . import ledger
 from . import store
 from . import taxcodes
 from .money import ZERO, money
-from .periods import parse_date
+from .periods import parse_date, quarter_of
 
 # Entry sources. BAS_PAYMENT is excluded when the BAS report measures GST
 # movements, otherwise clearing the GST accounts would look like new activity.
@@ -580,9 +580,37 @@ def director_loan(date, director, amount, direction='to_director', bank=None,
 
 # ------------------------------------------------------------- financed assets
 
+def pay_asset_deposit(date, amount, contact='', description='', bank=None,
+                      company=None) -> dict:
+    """Money down on something not delivered yet.
+
+    It sits as a deposit until the asset arrives. Depreciation runs from when
+    the asset is installed ready for use, and on a chattel mortgage the GST
+    credit belongs to the quarter of settlement, so neither starts at the
+    moment a deposit is paid.
+    """
+    company = company or config.load()
+    amount = money(amount)
+    if amount <= ZERO:
+        raise TransactionError('deposit must be positive')
+    supplier = contacts_mod.find(contact)
+    contact_id = supplier.contact_id if supplier else ''
+    bank_code = _bank(company, bank)
+    entry_id = ledger.post(ledger.Entry(
+        date=date, memo=description or 'Deposit on asset', source=ASSET_PURCHASE,
+        lines=[
+            ledger.debit(_role('asset_deposit'), amount,
+                         description=description or 'Deposit paid',
+                         contact=contact_id),
+            ledger.credit(bank_code, amount, description=description or 'Deposit',
+                          contact=contact_id),
+        ]))
+    return {'entry_id': entry_id, 'amount': amount}
+
+
 def buy_asset(date, asset_account, taxable_ex, gst=None, gst_free=0, deposit=0,
               financed=0, finance_account='2800', contact='', description='',
-              bank=None, company=None) -> dict:
+              bank=None, deposit_account=None, company=None) -> dict:
     """Buy a capital asset, optionally on finance.
 
     A vehicle invoice is not one taxable amount. Stamp duty and registration
@@ -628,8 +656,12 @@ def buy_asset(date, asset_account, taxable_ex, gst=None, gst_free=0, deposit=0,
                                           description='GST on capital purchase',
                                           contact=contact_id))
     if deposit != ZERO:
-        journal_lines.append(ledger.credit(bank_code, deposit,
-                                           description='Deposit',
+        # A deposit already paid is released from where it was parked; one
+        # paid on delivery comes straight out of the bank.
+        source_account = (str(deposit_account) if deposit_account
+                          else bank_code)
+        journal_lines.append(ledger.credit(source_account, deposit,
+                                           description='Deposit applied',
                                            contact=contact_id))
     if financed != ZERO:
         finance = coa.get(str(finance_account))
@@ -644,6 +676,13 @@ def buy_asset(date, asset_account, taxable_ex, gst=None, gst_free=0, deposit=0,
         date=date, memo=description or f'Purchase of {account.name}',
         source=ASSET_PURCHASE, lines=journal_lines))
 
+    delivered = parse_date(date)
+    quarter = quarter_of(delivered)
+    notes = [
+        f'Delivery date {delivered} puts the GST credit of {gst} and the start '
+        f'of depreciation in {quarter.label}. If delivery slips past '
+        f'{quarter.end}, both move to the next quarter.'
+    ]
     warnings = []
     if cost > company.car_limit:
         warnings.append(
@@ -653,7 +692,8 @@ def buy_asset(date, asset_account, taxable_ex, gst=None, gst_free=0, deposit=0,
             'It is not a car if it is designed to carry a load of one tonne or '
             'more, or is not designed principally to carry passengers.')
     return {'entry_id': entry_id, 'cost': cost, 'gst': gst, 'total': total,
-            'deposit': deposit, 'financed': financed, 'warnings': warnings}
+            'deposit': deposit, 'financed': financed, 'warnings': warnings,
+            'notes': notes}
 
 
 def finance_payment(date, amount, interest, finance_account='2800', bank=None,

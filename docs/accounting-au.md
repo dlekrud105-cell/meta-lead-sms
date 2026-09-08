@@ -205,12 +205,30 @@ python3 -m accounting buy-asset 1420 47250.91 \
   (금융사가 딜러에게 대신 전액 지급했으므로 지급한 것으로 봄).
 - 매달 상환금은 **원금과 이자를 나눠야** 합니다. 전액을 비용 처리하면 차를 두 번 공제하는 셈입니다.
 
+**상환 스케줄을 한 번 만들어두면 매달 자동으로 갈립니다:**
+
 ```bash
-python3 -m accounting finance-payment 1000.00 250.00 --date 2026-10-18
-#                                     총상환   이자
+python3 -m accounting finance-schedule --account 2800 \
+  --principal 51745.00 --rate 9.3 --months 60 --start 2026-10-18
+
+python3 -m accounting finance-payment --auto --account 2800 --date 2026-10-18
+#   Instalment #1 due 2026-10-18
+#   principal 680.67  interest 401.02  loan balance 51,064.33
 ```
 
-이자만 비용(6900)이고, 원금은 부채(2800)를 줄입니다.
+잔가(balloon)가 있으면 `--balloon 10000`을 붙이세요. 이자만 비용(6900)이고,
+원금은 부채(2800)를 줄입니다.
+
+**인도 전 계약금은 따로 잡습니다:**
+
+```bash
+python3 -m accounting asset-deposit 2000.00 --date 2026-09-05 \
+  --description "Van deposit"
+# -> 1210 Deposits Paid on Assets 에 보관
+```
+
+인도받기 전에는 **GST를 공제하지 않고 감가상각도 시작하지 않습니다.**
+인도일에 `buy-asset --deposit-account 1210`으로 자산에 편입시킵니다.
 
 **Car limit(차량 감가상각 한도)** — 2025-26년 $69,674. 이걸 넘으면 감가상각과 GST 공제가
 상한에 걸립니다. 단, **적재중량 1톤 이상 또는 주로 승객용으로 설계되지 않은 차량은

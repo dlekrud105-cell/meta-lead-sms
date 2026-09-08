@@ -78,6 +78,10 @@ CHART: list[Account] = [
        note='Label 5A payments. Offsets the company tax bill at year end.'),
     _a('1200', 'Prepayments', ASSET, 'NT',
        note='Insurance and licences paid in advance.'),
+    _a('1210', 'Deposits Paid on Assets', ASSET, 'NT', role='asset_deposit',
+       note='Money down on something not delivered yet. It becomes part of '
+            'the asset cost on delivery, not before - nothing is depreciated '
+            'and no GST is claimed until you actually hold the thing.'),
     _a('1400', 'Tools & Equipment - at cost', ASSET, 'CAP', role='fixed_asset'),
     _a('1410', 'Tools & Equipment - accumulated depreciation', ASSET, 'NT',
        contra=True),

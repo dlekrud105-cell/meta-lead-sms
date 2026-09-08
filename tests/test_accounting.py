@@ -10,7 +10,7 @@ from decimal import Decimal
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from accounting import abn  # noqa: E402
-from accounting import lodge  # noqa: E402
+from accounting import amortise, lodge  # noqa: E402
 from accounting import (accounts as coa, bankimport, bankrules,  # noqa: E402
                         bankstatement, calendar_au as cal, config, contacts,
                         jobs, ledger, lodgements, periods, reports as rp,
@@ -1038,6 +1038,106 @@ class FinancedAssetTests(BooksTestCase):
         tx.record_depreciation('2027-06-30', '1420', '7343.00')
         sheet = rp.balance_sheet('2027-06-30')
         self.assertTrue(sheet.balances, f'out by {sheet.out_by}')
+
+
+class AmortisationTests(BooksTestCase):
+    """The real loan: 51,745 at 9.3% over five years."""
+
+    def build(self, **kwargs):
+        defaults = dict(principal='51745.00', annual_rate='0.093', months=60,
+                        start='2026-10-18')
+        defaults.update(kwargs)
+        return amortise.schedule(**defaults)
+
+    def test_the_level_repayment(self):
+        self.assertEqual(self.build().payment, Decimal('1081.69'))
+
+    def test_the_loan_clears_exactly(self):
+        self.assertEqual(self.build().instalments[-1].balance, Decimal('0.00'))
+
+    def test_interest_falls_as_the_balance_does(self):
+        instalments = self.build().instalments
+        self.assertEqual(instalments[0].interest, Decimal('401.02'))
+        self.assertGreater(instalments[0].interest, instalments[-1].interest)
+        for earlier, later in zip(instalments, instalments[1:]):
+            self.assertLessEqual(later.interest, earlier.interest)
+
+    def test_principal_and_interest_add_back_to_the_payment(self):
+        for instalment in self.build().instalments:
+            self.assertEqual(instalment.principal + instalment.interest,
+                             instalment.payment)
+
+    def test_a_balloon_lowers_the_repayment_and_is_left_owing(self):
+        plain = self.build()
+        with_balloon = self.build(balloon='10000')
+        self.assertLess(with_balloon.payment, plain.payment)
+        # The point of a balloon is that it is still owing at the end.
+        self.assertEqual(with_balloon.instalments[-1].balance,
+                         Decimal('10000.00'))
+        self.assertEqual(plain.instalments[-1].balance, Decimal('0.00'))
+
+    def test_due_dates_step_a_month_at_a_time(self):
+        instalments = self.build().instalments
+        self.assertEqual(instalments[0].due, date(2026, 10, 18))
+        self.assertEqual(instalments[1].due, date(2026, 11, 18))
+        self.assertEqual(instalments[12].due, date(2027, 10, 18))
+
+    def test_a_percentage_passed_by_mistake_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self.build(annual_rate='9.3')
+
+    def test_a_saved_schedule_round_trips(self):
+        amortise.save('2800', '51745.00', '0.093', 60, '2026-10-18')
+        restored = amortise.load('2800')
+        self.assertEqual(restored.payment, Decimal('1081.69'))
+        self.assertEqual(len(restored.instalments), 60)
+
+    def test_an_automatic_repayment_uses_the_schedule(self):
+        tx.buy_asset('2026-09-18', '1420', '47250.91', gst='4725.09',
+                     gst_free='1769.00', deposit='2000.00', financed='51745.00')
+        built = amortise.save('2800', '51745.00', '0.093', 60, '2026-10-18')
+        first = built.on('2026-10-18')
+        result = tx.finance_payment('2026-10-18', first.payment, first.interest)
+        self.assertEqual(result['interest'], Decimal('401.02'))
+        self.assertEqual(result['principal'], Decimal('680.67'))
+        self.assertEqual(ledger.balance('2800'), Decimal('51064.33'))
+
+    def test_the_schedule_balance_tracks_the_ledger(self):
+        tx.buy_asset('2026-09-18', '1420', '47250.91', gst='4725.09',
+                     gst_free='1769.00', deposit='2000.00', financed='51745.00')
+        built = amortise.save('2800', '51745.00', '0.093', 60, '2026-10-18')
+        for instalment in built.instalments[:6]:
+            tx.finance_payment(instalment.due, instalment.payment,
+                               instalment.interest)
+        self.assertEqual(ledger.balance('2800'), built.instalments[5].balance)
+
+
+class AssetDepositTests(BooksTestCase):
+    def test_a_deposit_is_held_until_the_asset_arrives(self):
+        tx.pay_asset_deposit('2026-09-05', '2000.00', description='Van deposit')
+        self.assertEqual(ledger.balance('1210'), Decimal('2000.00'))
+        self.assertEqual(ledger.balance('1420'), Decimal('0.00'))
+        self.assertEqual(ledger.balance('1110'), Decimal('0.00'))
+
+    def test_no_gst_is_claimed_before_delivery(self):
+        tx.pay_asset_deposit('2026-09-05', '2000.00')
+        report = rp.bas('2026-07-01', '2026-09-30')
+        self.assertEqual(report.gst_on_purchases, Decimal('0.00'))
+
+    def test_delivery_releases_the_deposit_into_the_asset(self):
+        tx.pay_asset_deposit('2026-09-05', '2000.00')
+        tx.buy_asset('2026-09-18', '1420', '47250.91', gst='4725.09',
+                     gst_free='1769.00', deposit='2000.00', financed='51745.00',
+                     deposit_account='1210')
+        self.assertEqual(ledger.balance('1210'), Decimal('0.00'))
+        self.assertEqual(ledger.balance('1420'), Decimal('49019.91'))
+        self.assertEqual(ledger.balance('1110'), Decimal('4725.09'))
+
+    def test_the_delivery_quarter_is_called_out(self):
+        result = tx.buy_asset('2026-09-18', '1420', '47250.91', gst='4725.09',
+                              gst_free='1769.00', deposit='2000.00',
+                              financed='51745.00')
+        self.assertTrue(any('Q1 FY2027' in n for n in result['notes']))
 
 
 if __name__ == '__main__':
