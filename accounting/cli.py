@@ -6,6 +6,9 @@ import sys
 from datetime import date
 
 from . import accounts as coa
+from . import bankimport
+from . import bankrules
+from . import bankstatement
 from . import calendar_au as cal
 from . import config
 from . import contacts as contacts_mod
@@ -407,6 +410,10 @@ def _report_tpar(args):
                 rows, align='llrrrl'))
     print(f'\n  Total paid {fmt(report.total_paid)}   GST {fmt(report.total_gst)}'
           f'   Withheld {fmt(report.total_withheld)}')
+    if report.unattributed:
+        print(f'\n  ! {fmt(report.unattributed)} was paid to subcontractor '
+              'accounts with no payee recorded. The TPAR cannot be lodged '
+              'until every one of those has a name and an ABN against it.')
     problems = [r for r in report.rows if r.issues]
     if problems:
         print(f'\n  ! {len(problems)} payee(s) missing details the TPAR requires. '
@@ -505,6 +512,16 @@ def _report_super(args):
     as_at = args.end or today()
     obligations = rp.super_obligations(as_at)
     print(heading(f'Superannuation obligations as at {as_at}'))
+    for fy in rp.financial_years(as_at):
+        fy_start, fy_end = fy_range(fy)
+        gap = rp.super_shortfall(fy_start, min(fy_end, parse_date(as_at)))
+        if gap.wages == ZERO:
+            continue
+        print(f'  FY{fy}: wages {fmt(gap.wages)}, super required '
+              f'{fmt(gap.expected)}, recognised {fmt(gap.recognised)}'
+              + (f'  -> SHORT BY {fmt(gap.shortfall)}'
+                 if gap.shortfall > ZERO else '  -> ok'))
+    print()
     rows = [[o.pay_date.isoformat(), fmt(o.amount), o.due.isoformat(),
              fmt(o.paid), fmt(o.outstanding),
              'LATE' if o.is_late(as_at) else ('paid' if not o.outstanding else 'due')]
@@ -557,6 +574,111 @@ def cmd_lodgements(args):
     print(heading('Lodged with the ATO and ASIC'))
     print(table(['Kind', 'Period', 'Lodged', 'Reference', 'Amount', 'By', 'Notes'],
                 rows))
+    return 0
+
+
+def _proposal_rows(proposals, show):
+    rows = []
+    for proposal in proposals:
+        if show and proposal.status not in show:
+            continue
+        line = proposal.line
+        rows.append([
+            line.date.isoformat(),
+            ('-' if line.direction == 'debit' else '+') + fmt(line.amount),
+            line.description[:44],
+            proposal.account or '?',
+            proposal.tax_code if proposal.account else '',
+            proposal.status.upper(),
+        ])
+    return rows
+
+
+def cmd_import_bank(args):
+    try:
+        statement = bankstatement.parse_file(args.file)
+    except bankstatement.StatementError as exc:
+        print(f'error: {exc}', file=sys.stderr)
+        return 2
+
+    company = config.load()
+    proposals = bankimport.propose(statement, company)
+    summary = bankimport.summarise(proposals)
+    counts = summary['by_status']
+
+    print(heading(f'{args.file}'))
+    print(f'  Account {statement.account}   {statement.start} to {statement.end}')
+    print(f'  Opening {fmt(statement.opening)}   Closing {fmt(statement.closing)}   '
+          f'{len(statement.lines)} transactions')
+    print(f'  Debits {fmt(statement.debits)}   Credits {fmt(statement.credits)}   '
+          'reconciled against the bank\'s own totals')
+    print(f'\n  {counts.get(bankimport.READY, 0)} ready, '
+          f'{counts.get(bankimport.REVIEW, 0)} need a decision, '
+          f'{counts.get(bankimport.UNMATCHED, 0)} unmatched, '
+          f'{counts.get(bankimport.IMPORTED, 0)} already imported')
+
+    show = None
+    if args.review:
+        show = {bankimport.REVIEW, bankimport.UNMATCHED}
+    elif not args.all:
+        show = {bankimport.READY, bankimport.REVIEW, bankimport.UNMATCHED}
+    rows = _proposal_rows(proposals, show)
+    print()
+    print(table(['Date', 'Amount', 'Description', 'Acct', 'Tax', 'Status'], rows,
+                align='lrlllr'))
+
+    needing = [p for p in proposals
+               if p.status in (bankimport.REVIEW, bankimport.UNMATCHED)]
+    if needing and not args.quiet:
+        print('\n  Why these need a decision:')
+        seen_notes = set()
+        for proposal in needing:
+            note = proposal.note or 'no rule matches this line'
+            if note in seen_notes:
+                continue
+            seen_notes.add(note)
+            print(f'   - {proposal.line.description[:40]}')
+            print(f'     {note}')
+
+    if not args.post:
+        print('\n  Nothing has been posted. Add --post to write the ready lines '
+              'to the ledger.')
+        print('  Teach it a new rule with:  python3 -m accounting rule add '
+              '"MERCHANT" 5100')
+        return 0
+
+    postable = [p for p in proposals if p.status == bankimport.READY]
+    if args.include_review:
+        postable += [p for p in proposals if p.status == bankimport.REVIEW
+                     and p.account]
+    posted = 0
+    for proposal in postable:
+        bankimport.post(proposal, company)
+        posted += 1
+    held = len([p for p in proposals
+                if p.status in (bankimport.REVIEW, bankimport.UNMATCHED)])
+    print(f'\n  Posted {posted} entries.')
+    if held:
+        print(f'  {held} line(s) held back. Review them with --review, then '
+              'either add a rule or post them with --include-review.')
+    return 0
+
+
+def cmd_rule_add(args):
+    rule = bankrules.add(args.pattern, args.account, tax_code=args.tax_code or '',
+                         direction=args.direction, contact=args.contact or '',
+                         note=args.note or '')
+    account = coa.get(rule.account)
+    print(f'Rule added: "{rule.pattern}" -> {account.code} {account.name} '
+          f'({rule.tax_code or account.tax_code})')
+    return 0
+
+
+def cmd_rule_list(args):
+    rows = [[r.pattern, r.direction, r.account, r.tax_code or '-',
+             r.contact or '-', 'review' if r.review else '', r.note[:40]]
+            for r in bankrules.all_rules()]
+    print(table(['Pattern', 'Dir', 'Acct', 'Tax', 'Contact', 'Flag', 'Note'], rows))
     return 0
 
 
@@ -622,6 +744,14 @@ def cmd_check(args):
 
     for message in rp.division_7a_warnings(as_at, company):
         problems.append(message)
+
+    for fy, gap in rp.super_shortfalls(as_at, company):
+        problems.append(
+            f'FY{fy}: wages of {fmt(gap.wages)} were paid but only '
+            f'{fmt(gap.recognised)} of superannuation has been recognised. At '
+            f'{company.super_rate:.0%} it should be {fmt(gap.expected)}, so '
+            f'{fmt(gap.shortfall)} is missing. Unpaid super is not deductible '
+            'and has to be reported on an SGC statement.')
 
     for obligation in rp.late_super(as_at, company):
         problems.append(
@@ -869,6 +999,31 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--days', type=int, default=120)
     p.add_argument('--detail', action='store_true')
     p.set_defaults(func=cmd_calendar)
+
+    p = sub.add_parser('import-bank', help='read a bank statement into the ledger')
+    p.add_argument('file', help='CommBank PDF statement')
+    p.add_argument('--post', action='store_true',
+                   help='write the ready lines to the ledger')
+    p.add_argument('--include-review', action='store_true',
+                   help='also post the lines flagged for review')
+    p.add_argument('--review', action='store_true',
+                   help='show only what needs a decision')
+    p.add_argument('--all', action='store_true',
+                   help='include lines already imported')
+    p.add_argument('--quiet', action='store_true', help='skip the explanations')
+    p.set_defaults(func=cmd_import_bank)
+
+    rule = sub.add_parser('rule', help='rules that categorise bank lines')
+    rule_sub = rule.add_subparsers(dest='action', required=True)
+    p = rule_sub.add_parser('add')
+    p.add_argument('pattern', help='text to look for, or re:<regex>')
+    p.add_argument('account')
+    p.add_argument('--tax-code')
+    p.add_argument('--direction', choices=['any', 'debit', 'credit'], default='any')
+    p.add_argument('--contact')
+    p.add_argument('--note')
+    p.set_defaults(func=cmd_rule_add)
+    rule_sub.add_parser('list').set_defaults(func=cmd_rule_list)
 
     p = sub.add_parser('lodged', help='record something as lodged with the ATO')
     p.add_argument('kind', help='BAS, TPAR, STP, TAX_RETURN or ASIC')

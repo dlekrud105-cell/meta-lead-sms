@@ -34,9 +34,14 @@ DIVIDEND = 'DIVIDEND'
 DIRECTOR_LOAN = 'DIRECTOR_LOAN'
 DEPRECIATION = 'DEPRECIATION'
 MANUAL = 'JOURNAL'
+BANK = 'BANK'          # posted straight from an imported bank statement
+
+# Entries where money moved without an invoice or bill behind it. These are
+# already cash, so the cash-basis BAS takes them at face value.
+DIRECT_CASH_SOURCES = (SPEND, RECEIVE, BANK)
 
 # Payments that put money in a subcontractor's hands, for the TPAR.
-PAYMENT_SOURCES = (BILL_PAYMENT, SPEND)
+PAYMENT_SOURCES = (BILL_PAYMENT, SPEND, BANK)
 
 ACCUMULATED_DEPRECIATION = {'1400': '1410', '1420': '1430'}
 
@@ -435,10 +440,13 @@ def pay_wages(date, director, gross, payg_withheld, super_amount=None,
     journal_lines = [
         ledger.debit(person.wage_account, gross,
                      description=f'{person.name} gross wage'),
-        ledger.credit(_role('payg_withholding'), payg_withheld,
-                      description=f'PAYG withheld - {person.name}'),
-        ledger.credit(bank_code, net, description=f'Net pay - {person.name}'),
     ]
+    if payg_withheld != ZERO:
+        journal_lines.append(ledger.credit(
+            _role('payg_withholding'), payg_withheld,
+            description=f'PAYG withheld - {person.name}'))
+    journal_lines.append(ledger.credit(bank_code, net,
+                                       description=f'Net pay - {person.name}'))
     if super_amount != ZERO:
         journal_lines += [
             ledger.debit(_role('super_expense'), super_amount,

@@ -28,8 +28,9 @@ python3 app.py
 
 ```bash
 python3 -m accounting setup --name "Your Painting Pty Ltd" --registered 2026-01-15 \
-  --director "이름1" --director "이름2"
+  --director "이름1" --director "이름2" --gst-basis cash
 
+python3 -m accounting import-bank statement.pdf --post   # 은행 명세서 자동 분류
 python3 -m accounting check          # 지금 문제가 뭔지 한 번에
 python3 -m accounting report bas --period 2026Q3
 python3 -m accounting report tpar --fy 2026
@@ -37,7 +38,8 @@ python3 -m accounting report tpar --fy 2026
 
 **→ 전체 사용법은 [`docs/accounting-au.md`](docs/accounting-au.md)** 를 보세요.
 
-담당하는 것: 복식부기 원장 · 인보이스/청구서 · GST 세금코드 · BAS 라벨 자동집계 ·
+담당하는 것: **CommBank 명세서 자동 입력**(은행 합계와 대조 검증) · 복식부기 원장 ·
+인보이스/청구서 · cash/accruals GST · BAS 라벨 자동집계 ·
 TPAR(건설업 하청 신고) · ABN 미제출 시 47% 원천징수 · 디렉터 급여/super 12%/배당 ·
 Division 7A 경고 · 현장별 수익성 · 법인세 추정 · ATO·ASIC 마감 캘린더.
 

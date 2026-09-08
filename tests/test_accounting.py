@@ -9,9 +9,10 @@ from decimal import Decimal
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from accounting import (accounts as coa, calendar_au as cal, config,  # noqa: E402
-                        contacts, jobs, ledger, lodgements, periods,
-                        reports as rp, taxcodes, transactions as tx)
+from accounting import (accounts as coa, bankimport, bankrules,  # noqa: E402
+                        bankstatement, calendar_au as cal, config, contacts,
+                        jobs, ledger, lodgements, periods, reports as rp,
+                        taxcodes, transactions as tx)
 from accounting.money import ex_gst, gst_from_exclusive, gst_from_inclusive, money  # noqa: E402
 
 
@@ -616,6 +617,145 @@ class NoWagesTests(BooksTestCase):
     def test_the_pay_day_super_notice_is_never_overdue(self):
         for obligation in cal.overdue('2027-06-30', self.company):
             self.assertFalse(obligation.informational)
+
+
+STATEMENT = """
+Account Number 06 2194 10869266
+Statement
+Period 1 May 2026 - 30 Jul 2026
+Date Transaction Debit Credit Balance
+01 May 2026 OPENING BALANCE 1,000.00 CR
+02 May INSPIRATIONS PAINT CHATSWOOD AU
+Card xx6692
+Value Date 29/04/2026 110.00 890.00 CR
+05 May Fast Transfer From ACTIVE BUILDING GROUP
+GN.J001
+Active Building Group 2,200.00 3,090.00 CR
+07 May UBER *EATS HELP.UBER.COM 55.00 3,035.00 CR
+30 Jul 2026 CLOSING BALANCE 3,035.00 CR
+Opening balance - Total debits Total credits = Closing balance
+1,000.00 CR 165.00 2,200.00 3,035.00 CR
+"""
+
+
+class StatementParsingTests(unittest.TestCase):
+    def test_a_clean_statement_parses_and_reconciles(self):
+        statement = bankstatement.parse(STATEMENT)
+        self.assertEqual(len(statement.lines), 3)
+        self.assertEqual(statement.opening, Decimal('1000.00'))
+        self.assertEqual(statement.closing, Decimal('3035.00'))
+        self.assertEqual(statement.debits, Decimal('165.00'))
+        self.assertEqual(statement.credits, Decimal('2200.00'))
+        self.assertEqual(statement.reconcile(), [])
+
+    def test_direction_comes_from_the_running_balance(self):
+        lines = bankstatement.parse(STATEMENT).lines
+        self.assertEqual([l.direction for l in lines],
+                         ['debit', 'credit', 'debit'])
+
+    def test_dates_get_the_right_year_across_the_period(self):
+        lines = bankstatement.parse(STATEMENT).lines
+        self.assertEqual(lines[0].date, date(2026, 5, 2))
+
+    def test_card_and_value_date_noise_is_stripped(self):
+        first = bankstatement.parse(STATEMENT).lines[0]
+        self.assertNotIn('Value Date', first.description)
+        self.assertNotIn('Card xx', first.description)
+        self.assertIn('INSPIRATIONS PAINT', first.description)
+
+    def test_a_statement_that_does_not_reconcile_is_rejected(self):
+        broken = STATEMENT.replace('1,000.00 CR 165.00', '1,000.00 CR 999.00')
+        with self.assertRaises(bankstatement.StatementError):
+            bankstatement.parse(broken)
+
+    def test_a_missing_period_is_rejected(self):
+        with self.assertRaises(bankstatement.StatementError):
+            bankstatement.parse('nothing useful here')
+
+
+class BankImportTests(BooksTestCase):
+    def setUp(self):
+        super().setUp()
+        self.statement = bankstatement.parse(STATEMENT)
+
+    def _find(self, proposals, text):
+        return [p for p in proposals if text in p.line.description][0]
+
+    def test_rules_classify_the_obvious_lines(self):
+        proposals = bankimport.propose(self.statement, self.company)
+        paint = self._find(proposals, 'INSPIRATIONS')
+        self.assertEqual(paint.account, '5100')
+        self.assertEqual(paint.status, bankimport.READY)
+        self.assertEqual(self._find(proposals, 'ACTIVE BUILDING').account, '4010')
+
+    def test_meals_are_held_for_a_person_to_decide(self):
+        proposals = bankimport.propose(self.statement, self.company)
+        meal = self._find(proposals, 'UBER')
+        self.assertEqual(meal.status, bankimport.REVIEW)
+        self.assertEqual(meal.account, '6960')
+        self.assertEqual(meal.tax_code, 'NT')
+
+    def test_posting_splits_gst_and_moves_the_bank(self):
+        proposals = bankimport.propose(self.statement, self.company)
+        paint = self._find(proposals, 'INSPIRATIONS')
+        bankimport.post(paint, self.company)
+        self.assertEqual(ledger.balance('5100'), Decimal('100.00'))
+        self.assertEqual(ledger.balance('1110'), Decimal('10.00'))
+        self.assertEqual(ledger.balance('1000'), Decimal('-110.00'))
+
+    def test_a_line_is_never_imported_twice(self):
+        first = bankimport.propose(self.statement, self.company)
+        for proposal in first:
+            if proposal.account:
+                bankimport.post(proposal, self.company)
+        again = bankimport.propose(self.statement, self.company)
+        self.assertTrue(all(p.status == bankimport.IMPORTED for p in again))
+        entries_before = len(ledger.all_lines())
+        for proposal in again:
+            self.assertEqual(proposal.status, bankimport.IMPORTED)
+        self.assertEqual(len(ledger.all_lines()), entries_before)
+
+    def test_a_payee_is_created_so_the_tpar_can_find_it(self):
+        proposals = bankimport.propose(self.statement, self.company)
+        income = self._find(proposals, 'ACTIVE BUILDING')
+        bankimport.post(income, self.company)
+        self.assertIsNotNone(contacts.find('Active Building Group'))
+
+    def test_a_user_rule_beats_the_built_in_one(self):
+        bankrules.add('INSPIRATIONS PAINT', '5300', tax_code='GST')
+        proposals = bankimport.propose(self.statement, self.company)
+        paint = self._find(proposals, 'INSPIRATIONS')
+        self.assertEqual(paint.account, '5300')
+
+    def test_imported_money_reaches_the_cash_basis_bas(self):
+        for proposal in bankimport.propose(self.statement, self.company):
+            if proposal.account:
+                bankimport.post(proposal, self.company)
+        report = rp.bas('2026-04-01', '2026-06-30')
+        self.assertEqual(report.g1, Decimal('2200.00'))
+        self.assertEqual(report.gst_on_sales, Decimal('200.00'))
+        self.assertEqual(report.gst_on_purchases, Decimal('10.00'))
+
+
+class SuperShortfallTests(BooksTestCase):
+    def test_wages_with_no_super_are_flagged(self):
+        # A wage paid straight from a bank feed carries no super with it.
+        tx.manual_journal('2026-06-18', 'Wage paid from the bank',
+                          ['6000:DR:12000', '1000:CR:12000'])
+        gap = rp.super_shortfall('2025-07-01', '2026-06-30')
+        self.assertEqual(gap.wages, Decimal('12000.00'))
+        self.assertEqual(gap.expected, Decimal('1440.00'))
+        self.assertEqual(gap.shortfall, Decimal('1440.00'))
+
+    def test_a_prior_year_shortfall_is_still_reported_later(self):
+        tx.manual_journal('2026-06-18', 'Wage',
+                          ['6000:DR:12000', '1000:CR:12000'])
+        shortfalls = rp.super_shortfalls('2026-09-08', self.company)
+        self.assertEqual([fy for fy, _ in shortfalls], [2026])
+
+    def test_a_proper_pay_run_leaves_no_shortfall(self):
+        tx.pay_wages('2026-06-18', 'd1', '12000', '0')
+        self.assertEqual(rp.super_shortfalls('2026-09-08', self.company), [])
 
 
 if __name__ == '__main__':

@@ -256,7 +256,7 @@ def _cash_events(start, end) -> list:
 
     # Money that moved without a document behind it.
     for line in ledger.lines(start=start, end=end,
-                             sources=(tx.SPEND, tx.RECEIVE)):
+                             sources=tx.DIRECT_CASH_SOURCES):
         account = coa.get(line.account)
         if account.type == coa.INCOME:
             events.append(TaxEvent('sale', line.account,
@@ -392,6 +392,7 @@ class Tpar:
     end: date
     due: date
     rows: list = field(default_factory=list)
+    unattributed: Decimal = ZERO   # paid to a TPAR account with no payee on file
 
     @property
     def total_paid(self) -> Decimal:
@@ -417,8 +418,13 @@ def tpar(fy: int) -> Tpar:
     tpar_accounts = coa.tpar_accounts()
     totals = {}
 
+    orphaned = [ZERO]
+
     def add(contact_id, gross, gst, withheld):
         if not contact_id:
+            # Still counted, so the total cannot silently understate what was
+            # paid to subcontractors.
+            orphaned[0] += gross
             return
         current = totals.setdefault(contact_id, [ZERO, ZERO, ZERO])
         current[0] += gross
@@ -462,7 +468,8 @@ def tpar(fy: int) -> Tpar:
             money(withheld * settled * share))
 
     # Money spent directly on subcontract labour without a bill.
-    for line in ledger.lines(start=start, end=end, sources=(tx.SPEND,)):
+    for line in ledger.lines(start=start, end=end,
+                             sources=(tx.SPEND, tx.BANK)):
         if line.account not in tpar_accounts:
             continue
         amount_ex = money(line.debit - line.credit)
@@ -477,7 +484,8 @@ def tpar(fy: int) -> Tpar:
         rows.append(TparRow(contact, money(gross), money(gst), money(withheld)))
     rows.sort(key=lambda r: r.gross_paid, reverse=True)
 
-    return Tpar(fy=fy, start=start, end=end, due=date(fy, 8, 28), rows=rows)
+    return Tpar(fy=fy, start=start, end=end, due=date(fy, 8, 28), rows=rows,
+                unattributed=money(orphaned[0]))
 
 
 # -------------------------------------------------------------- aged balances
@@ -707,6 +715,57 @@ def super_obligations(as_at, company=None) -> list:
         obligations.append(SuperObligation(pay_date=pay_date, amount=amount,
                                            due=due, paid=money(applied)))
     return obligations
+
+
+@dataclass
+class SuperShortfall:
+    wages: Decimal
+    expected: Decimal
+    recognised: Decimal
+
+    @property
+    def shortfall(self) -> Decimal:
+        return money(self.expected - self.recognised)
+
+
+def super_shortfall(start, end, company=None) -> SuperShortfall:
+    """Super that should have been accrued on the wages actually paid.
+
+    Wages imported straight from a bank feed carry no super with them, so this
+    is what catches a pay run that went out without the guarantee being met.
+    """
+    company = company or config.load()
+    wages = ZERO
+    for account in coa.by_role('wages'):
+        wages += ledger.net(account.code, start, end)
+    recognised = ledger.net(coa.first_with_role('super_expense').code, start, end)
+    return SuperShortfall(wages=money(wages),
+                          expected=money(wages * company.super_rate),
+                          recognised=money(recognised))
+
+
+def financial_years(as_at, company=None) -> list:
+    """Every financial year the books touch, oldest first."""
+    company = company or config.load()
+    dates = [l.date for l in ledger.lines(end=as_at)]
+    if company.registered:
+        dates.append(company.registered)
+    if not dates:
+        return [fy_ending(as_at)]
+    return list(range(fy_ending(min(dates)), fy_ending(parse_date(as_at)) + 1))
+
+
+def super_shortfalls(as_at, company=None) -> list:
+    """(fy, SuperShortfall) for every year where super is short."""
+    company = company or config.load()
+    as_at = parse_date(as_at)
+    out = []
+    for fy in financial_years(as_at, company):
+        fy_start, fy_end = fy_range(fy)
+        gap = super_shortfall(fy_start, min(fy_end, as_at), company)
+        if gap.shortfall > ZERO:
+            out.append((fy, gap))
+    return out
 
 
 def late_super(as_at, company=None) -> list:

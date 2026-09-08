@@ -83,6 +83,46 @@ python3 -m accounting job list
 
 ---
 
+## 2-1. 은행 명세서 자동 입력 (제일 빠른 방법)
+
+CommBank PDF 명세서를 그대로 읽어서 분류합니다. 하나하나 입력할 필요가 없습니다.
+
+```bash
+# 1) 미리보기 — 아무것도 기록되지 않습니다
+python3 -m accounting import-bank statement.pdf
+
+# 2) 판단이 필요한 것만 보기
+python3 -m accounting import-bank statement.pdf --review
+
+# 3) 확실한 것만 기록
+python3 -m accounting import-bank statement.pdf --post
+
+# 4) 검토 항목까지 전부 기록
+python3 -m accounting import-bank statement.pdf --post --include-review
+```
+
+**안전장치:**
+- 명세서를 읽으면 **은행이 인쇄한 차변·대변 합계와 대조**합니다. 안 맞으면 아예 거부하고 중단합니다.
+- 같은 거래는 **두 번 들어가지 않습니다** (날짜+금액+잔액+내용 지문으로 판별)
+- 애매한 건 `REVIEW`로 표시하고 **기록하지 않습니다**. 식사비가 접대비인지 현장 간식인지 같은 판단은 사람이 해야 합니다.
+
+**규칙 가르치기:**
+
+```bash
+python3 -m accounting rule add "DULUX" 5100
+python3 -m accounting rule add "ACTIVE BUILDING GROUP" 4010 --direction credit
+python3 -m accounting rule add "re:Transfer To J HAN" 5000 --contact "J Han"
+python3 -m accounting rule list
+```
+
+`re:`로 시작하면 정규식입니다. 내가 추가한 규칙이 기본 규칙보다 먼저 적용됩니다.
+`--direction credit`은 입금에만, `debit`은 출금에만 적용합니다.
+
+> 하청업자 계정(5000)으로 분류되면 **연락처가 자동 생성**됩니다. TPAR 신고에 필요하기 때문입니다.
+> 나중에 `contact update`로 ABN과 주소를 채워넣으세요.
+
+---
+
 ## 3. 일상 입력
 
 ### 매출 (인보이스)
@@ -338,6 +378,7 @@ python3 -m accounting check
 - 대차 불일치
 - 지난 신고 마감 (BAS / super / TPAR / STP / 법인세 / ASIC) — 이미 신고 기록한 건 제외
 - **Pay Day Super 지연** (급여일 + 7일 초과)
+- **연금 미적립** — 급여는 나갔는데 super 12%가 안 잡힌 경우 (연도별로)
 - Division 7A 노출 — 마감된 회계연도 잔액까지
 - ABN 없는 하청업자
 - TPAR에 필요한 정보가 빠진 payee

@@ -109,11 +109,21 @@ LODGEMENTS = Table('lodgements.csv', [
     'kind', 'period', 'lodged_date', 'reference', 'amount', 'lodged_by', 'notes',
 ])
 
+IMPORT_RULES = Table('import_rules.csv', [
+    'pattern', 'direction', 'account', 'tax_code', 'contact', 'review', 'note',
+])
+
+BANK_LINES = Table('bank_lines.csv', [
+    'fingerprint', 'date', 'description', 'amount', 'direction', 'account',
+    'tax_code', 'contact', 'entry_id', 'imported_on',
+])
+
 ACCOUNTS_EXPORT = Table('accounts.csv', [
     'code', 'name', 'type', 'tax_code', 'normal_side', 'tpar', 'deductible', 'note',
 ])
 
-TABLES = [JOURNAL, CONTACTS, DOCUMENTS, JOBS, LODGEMENTS, ACCOUNTS_EXPORT]
+TABLES = [JOURNAL, CONTACTS, DOCUMENTS, JOBS, LODGEMENTS, IMPORT_RULES,
+          BANK_LINES, ACCOUNTS_EXPORT]
 
 
 def company_file() -> Path:
