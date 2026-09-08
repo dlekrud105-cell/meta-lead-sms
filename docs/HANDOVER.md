@@ -286,6 +286,26 @@ lodgements.record('BAS', 'Q4 FY2026', date, reference=, amount=, lodged_by=)
 
 ## 6. 통합 계획
 
+### 6.0 동작하는 예제가 있습니다
+
+`examples/` 에 실제로 돌아가는 구현이 들어있습니다. **먼저 돌려보세요.**
+
+```bash
+python3 examples/test_sql_backend.py   # 엔진 테스트 148개를 SQL 백엔드로 실행
+python3 examples/test_api.py           # API 핸들러 테스트 16개
+```
+
+| 파일 | 내용 |
+|---|---|
+| `examples/schema.sql` | PostgreSQL 스키마 |
+| `examples/sql_store.py` | `store.Table`의 SQL 구현 — `bind(conn, company_id)` 한 줄로 전환 |
+| `examples/api.py` | 정산탭용 HTTP 핸들러 (프레임워크 무관) + FastAPI 배선 |
+
+CSV를 SQL로 바꿔도 엔진이 그대로 돈다는 걸 실행으로 증명해뒀습니다.
+자세한 건 [`examples/README.md`](../examples/README.md).
+
+---
+
 ### 6.1 저장소를 DB로 — `store.py`만 교체
 
 ```python
