@@ -902,5 +902,62 @@ class LodgementPackTests(BooksTestCase):
         self.assertIn('Activity statements', pack.where)
 
 
+class CashflowTests(BooksTestCase):
+    def setUp(self):
+        super().setUp()
+        contacts.add('Jane Smith', contacts.CUSTOMER)
+        tx.manual_journal('2026-02-01', 'Director funds in',
+                          ['1000:DR:1000', '2600:CR:1000'])
+        invoice = tx.create_invoice('2026-03-03', 'Jane Smith', ['4000:8000'])
+        tx.record_receipt('2026-03-20', invoice['doc_id'])
+        tx.spend_money('2026-04-07', '5100', '550.00', description='Paint')
+
+    def test_months_are_split_out_and_roll_forward(self):
+        flow = rp.cashflow('2026-02-01', '2026-04-30')
+        self.assertEqual([p.label for p in flow.periods],
+                         ['2026-02', '2026-03', '2026-04'])
+        self.assertEqual(flow.periods[0].opening, Decimal('0.00'))
+        for earlier, later in zip(flow.periods, flow.periods[1:]):
+            self.assertEqual(earlier.closing, later.opening)
+
+    def test_closing_matches_the_bank_balance(self):
+        flow = rp.cashflow('2026-02-01', '2026-04-30')
+        self.assertEqual(flow.closing, ledger.balance('1000', '2026-04-30'))
+
+    def test_money_in_is_attributed_to_what_it_came_from(self):
+        march = rp.cashflow('2026-02-01', '2026-04-30').periods[1]
+        self.assertEqual(march.inflows['4000'], Decimal('8000.00'))
+        self.assertEqual(march.inflows['2100'], Decimal('800.00'))
+        self.assertEqual(march.total_in, Decimal('8800.00'))
+
+    def test_director_funds_are_not_counted_as_income(self):
+        february = rp.cashflow('2026-02-01', '2026-04-30').periods[0]
+        self.assertEqual(february.inflows, {'2600': Decimal('1000.00')})
+        self.assertNotIn('4000', february.inflows)
+
+    def test_money_out_splits_the_expense_from_its_gst(self):
+        april = rp.cashflow('2026-02-01', '2026-04-30').periods[2]
+        self.assertEqual(april.outflows['5100'], Decimal('500.00'))
+        self.assertEqual(april.outflows['1110'], Decimal('50.00'))
+        self.assertEqual(april.total_out, Decimal('550.00'))
+
+    def test_opening_carries_history_from_before_the_window(self):
+        flow = rp.cashflow('2026-04-01', '2026-04-30')
+        self.assertEqual(flow.opening, Decimal('9800.00'))
+
+    def test_accounts_are_ranked_by_size(self):
+        flow = rp.cashflow('2026-02-01', '2026-04-30')
+        self.assertEqual(flow.accounts('in')[0], '4000')
+        self.assertEqual(flow.total_for('4000', 'in'), Decimal('8000.00'))
+
+    def test_a_transfer_between_own_accounts_nets_out(self):
+        tx.manual_journal('2026-04-15', 'Move to savings',
+                          ['1010:DR:2000', '1000:CR:2000'])
+        april = rp.cashflow('2026-04-01', '2026-04-30').periods[0]
+        self.assertEqual(april.inflows.get('1010'), Decimal('2000.00'))
+        self.assertEqual(april.outflows.get('1000'), Decimal('2000.00'))
+        self.assertEqual(april.net, Decimal('-550.00'))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -579,7 +579,49 @@ def _report_super(args):
     return 0
 
 
+def _report_cashflow(args):
+    start, end, label = _period(args)
+    flow = rp.cashflow(start, end)
+    if not flow.periods:
+        print('  (no movements in this period)')
+        return 0
+    months = [p.label for p in flow.periods]
+    print(heading(f'Cash flow  {label}'))
+
+    summary = [['Opening'] + [fmt(p.opening) for p in flow.periods] + ['']]
+    summary.append(['Money in'] + [fmt(p.total_in) for p in flow.periods]
+                   + [fmt(flow.total_in)])
+    summary.append(['Money out'] + [fmt(p.total_out) for p in flow.periods]
+                   + [fmt(flow.total_out)])
+    summary.append(['NET'] + [fmt(p.net) for p in flow.periods]
+                   + [fmt(money(flow.total_in - flow.total_out))])
+    summary.append(['Closing'] + [fmt(p.closing) for p in flow.periods] + [''])
+    align = 'l' + 'r' * (len(months) + 1)
+    print(table(['', *months, 'Total'], summary, align=align))
+
+    for direction, title in (('in', 'Where the money came from'),
+                             ('out', 'Where the money went')):
+        codes = flow.accounts(direction)
+        if not codes:
+            continue
+        rows = []
+        for code in codes:
+            account = coa.get(code)
+            cells = []
+            for period in flow.periods:
+                source = period.inflows if direction == 'in' else period.outflows
+                amount = source.get(code, ZERO)
+                cells.append(fmt(amount) if amount else '')
+            rows.append([f'{code} {account.name}'[:34], *cells,
+                         fmt(flow.total_for(code, direction))])
+        print(f'\n  {title}')
+        print(table(['Account', *months, 'Total'], rows, align=align,
+                    indent='    '))
+    return 0
+
+
 REPORTS = {
+    'cashflow': _report_cashflow,
     'super': _report_super,
     'tb': _report_tb, 'pl': _report_pl, 'bs': _report_bs, 'bas': _report_bas,
     'tpar': _report_tpar, 'ar': _report_ar, 'ap': _report_ap, 'jobs': _report_jobs,

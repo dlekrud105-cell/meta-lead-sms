@@ -18,8 +18,8 @@ from . import store
 from . import taxcodes
 from . import transactions as tx
 from .money import ZERO, money
-from .periods import (PAYDAY_SUPER_DAYS, PAYDAY_SUPER_START, fy_ending,
-                      fy_range, parse_date, quarter_of)
+from .periods import (PAYDAY_SUPER_DAYS, PAYDAY_SUPER_START, end_of_month,
+                      fy_ending, fy_range, parse_date, quarter_of)
 
 
 @dataclass
@@ -902,6 +902,171 @@ def tax_estimate(fy: int, as_at=None, company=None) -> TaxEstimate:
                        non_deductible=pl.non_deductible,
                        taxable_income=pl.taxable_income, rate=rate, tax=tax,
                        instalments_paid=instalments)
+
+
+# -------------------------------------------------------------------- cashflow
+
+@dataclass
+class CashflowPeriod:
+    label: str
+    start: date
+    end: date
+    opening: Decimal
+    inflows: dict = field(default_factory=dict)    # account code -> amount in
+    outflows: dict = field(default_factory=dict)   # account code -> amount out
+
+    @property
+    def total_in(self) -> Decimal:
+        return money(sum(self.inflows.values(), ZERO))
+
+    @property
+    def total_out(self) -> Decimal:
+        return money(sum(self.outflows.values(), ZERO))
+
+    @property
+    def net(self) -> Decimal:
+        return money(self.total_in - self.total_out)
+
+    @property
+    def closing(self) -> Decimal:
+        return money(self.opening + self.net)
+
+
+@dataclass
+class Cashflow:
+    periods: list = field(default_factory=list)
+
+    @property
+    def opening(self) -> Decimal:
+        return self.periods[0].opening if self.periods else ZERO
+
+    @property
+    def closing(self) -> Decimal:
+        return self.periods[-1].closing if self.periods else ZERO
+
+    @property
+    def total_in(self) -> Decimal:
+        return money(sum((p.total_in for p in self.periods), ZERO))
+
+    @property
+    def total_out(self) -> Decimal:
+        return money(sum((p.total_out for p in self.periods), ZERO))
+
+    def accounts(self, direction: str) -> list:
+        """Account codes seen in the period, biggest total first."""
+        totals = {}
+        for period in self.periods:
+            source = period.inflows if direction == 'in' else period.outflows
+            for code, amount in source.items():
+                totals[code] = money(totals.get(code, ZERO) + amount)
+        return sorted(totals, key=lambda c: totals[c], reverse=True)
+
+    def total_for(self, code: str, direction: str) -> Decimal:
+        total = ZERO
+        for period in self.periods:
+            source = period.inflows if direction == 'in' else period.outflows
+            total += source.get(code, ZERO)
+        return money(total)
+
+
+def _month_starts(start: date, end: date) -> list:
+    months, cursor = [], date(start.year, start.month, 1)
+    while cursor <= end:
+        months.append(cursor)
+        cursor = date(cursor.year + 1, 1, 1) if cursor.month == 12 else \
+            date(cursor.year, cursor.month + 1, 1)
+    return months
+
+
+def _look_through_control(lines, doc_ref) -> list:
+    """Resolve a receivable or payable line back to what it was actually for.
+
+    A customer receipt posts against accounts receivable, which answers "which
+    control account moved" rather than "what did this money come from". Where
+    the entry names a document, the document's own lines are substituted, so a
+    payment shows up under painting income or paint and materials instead.
+    """
+    control_codes = {coa.first_with_role('ar').code,
+                     coa.first_with_role('ap').code}
+    resolved = []
+    for line in lines:
+        if line.account in control_codes and doc_ref:
+            document = store.DOCUMENTS.find(doc_id=doc_ref)
+            if document:
+                source = tx.INVOICE if document['type'] == tx.INVOICE else tx.BILL
+                _, parts, _ = _document_composition(doc_ref, source)
+                if parts:
+                    for code, amount_ex, tax_code in parts:
+                        gst = taxcodes.gst_on(amount_ex, tax_code)
+                        resolved.append((code, amount_ex))
+                        if gst != ZERO:
+                            gst_role = ('gst_collected' if source == tx.INVOICE
+                                        else 'gst_paid')
+                            resolved.append(
+                                (coa.first_with_role(gst_role).code, gst))
+                    continue
+        resolved.append((line.account, abs(line.signed)))
+    return resolved
+
+
+def cashflow(start, end, company=None) -> Cashflow:
+    """Where the money actually came from and went, month by month.
+
+    This follows the bank, not profit. Each movement is attributed to the
+    other side of the entry that moved it, so a customer receipt shows as
+    income and a director drawing shows as a loan rather than both being
+    lumped together as "transfers".
+    """
+    company = company or config.load()
+    start, end = parse_date(start), parse_date(end)
+    bank_codes = {a.code for a in coa.bank_accounts()}
+
+    opening = ZERO
+    for code in bank_codes:
+        account = coa.get(code)
+        balance = ledger.balance(code, date.fromordinal(start.toordinal() - 1))
+        opening += balance if account.type == coa.ASSET else -balance
+
+    flow = Cashflow()
+    for month_start in _month_starts(start, end):
+        month_end = min(end, end_of_month(month_start.year, month_start.month))
+        period = CashflowPeriod(label=month_start.strftime('%Y-%m'),
+                                start=max(start, month_start), end=month_end,
+                                opening=money(opening))
+
+        # Group the entries that touched a bank account, then attribute the
+        # movement to whatever the other side of that entry was.
+        entries = {}
+        for line in ledger.lines(start=period.start, end=period.end):
+            entries.setdefault(line.entry_id, []).append(line)
+
+        for lines in entries.values():
+            bank_lines = [l for l in lines if l.account in bank_codes]
+            if not bank_lines:
+                continue
+            other = [l for l in lines if l.account not in bank_codes]
+            for bank_line in bank_lines:
+                account = coa.get(bank_line.account)
+                # Debit on an asset account, or a credit on a card, is money in.
+                moved = (bank_line.debit - bank_line.credit) if \
+                    account.type == coa.ASSET else (bank_line.credit - bank_line.debit)
+                if moved == ZERO:
+                    continue
+                counterparts = _look_through_control(other or [bank_line],
+                                                     lines[0].doc_ref)
+                weight = money(sum((abs(amount) for _, amount in counterparts),
+                                   ZERO))
+                for code, counterpart_amount in counterparts:
+                    share = (abs(counterpart_amount) / weight) if weight else ZERO
+                    amount = money(abs(moved) * share)
+                    if amount == ZERO:
+                        continue
+                    target = (period.inflows if moved > ZERO else period.outflows)
+                    target[code] = money(target.get(code, ZERO) + amount)
+
+        opening = period.closing
+        flow.periods.append(period)
+    return flow
 
 
 # ----------------------------------------------------------------- gst turnover
