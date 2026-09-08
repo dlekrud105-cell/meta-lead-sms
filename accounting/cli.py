@@ -14,6 +14,7 @@ from . import bankstatement
 from . import calendar_au as cal
 from . import config
 from . import contacts as contacts_mod
+from . import export_template
 from . import jobs as jobs_mod
 from . import ledger
 from . import lodge as lodge_mod
@@ -906,6 +907,121 @@ def cmd_lodge(args):
     return 0
 
 
+def cmd_export_xlsx(args):
+    """Fill a bookkeeping spreadsheet from the books.
+
+    The template is the spec. Its headers, its Korean transaction types and
+    its four summary formulas are left exactly as they are; only the rows and
+    a clearly marked block of cross-check figures are added.
+    """
+    try:
+        import openpyxl
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    except ImportError:
+        print('error: writing spreadsheets needs openpyxl: pip install openpyxl',
+              file=sys.stderr)
+        return 2
+
+    start = args.start
+    end = args.end
+    if args.period:
+        start, end, _ = resolve_period(args.period)
+        start, end = start.isoformat(), end.isoformat()
+    rows = export_template.bookkeeping_rows(start, end)
+    if not rows:
+        print('error: no transactions in that period', file=sys.stderr)
+        return 2
+    figures = export_template.totals(rows)
+
+    workbook = openpyxl.load_workbook(args.template)
+    sheet = workbook['Sheet1'] if 'Sheet1' in workbook.sheetnames \
+        else workbook.worksheets[0]
+
+    body = Font(name='Arial', size=10)
+    header_font = Font(name='Arial', size=10, bold=True)
+    money_format = '#,##0.00'
+    thin = Side(style='thin', color='D9D9D9')
+    edge = Border(bottom=thin)
+
+    for cell in sheet[1]:
+        cell.font = header_font
+        cell.alignment = Alignment(vertical='center', wrap_text=True)
+        cell.fill = PatternFill('solid', fgColor='EFEFEF')
+    sheet.freeze_panes = 'A2'
+    for column, width in zip('ABCDEFGHI',
+                             (12, 14, 52, 13, 15, 12, 13, 24, 40)):
+        sheet.column_dimensions[column].width = width
+
+    for index, row in enumerate(rows, start=2):
+        sheet[f'A{index}'] = row.date
+        sheet[f'B{index}'] = row.kind
+        sheet[f'C{index}'] = row.description
+        sheet[f'D{index}'] = float(row.amount)
+        sheet[f'E{index}'] = row.gst_included
+        # Derived, not pasted, so the sheet still adds up if an amount is edited.
+        sheet[f'F{index}'] = f'=IF(E{index}="Y",ROUND(D{index}/11,2),0)'
+        sheet[f'G{index}'] = f'=D{index}-F{index}'
+        sheet[f'H{index}'] = row.method
+        sheet[f'I{index}'] = row.category
+        for column in 'ABCDEFGHI':
+            cell = sheet[f'{column}{index}']
+            cell.font = body
+            cell.border = edge
+            if column in 'DFG':
+                cell.number_format = money_format
+            if column in 'BE':
+                cell.alignment = Alignment(horizontal='center')
+
+    summary = workbook['Summary'] if 'Summary' in workbook.sheetnames else None
+    if summary is not None:
+        for cell in summary[1]:
+            cell.font = header_font
+        summary.column_dimensions['A'].width = 34
+        summary.column_dimensions['B'].width = 46
+        for line in range(2, 6):                      # the template's own four
+            summary[f'A{line}'].font = body
+            summary[f'B{line}'].font = body
+            summary[f'B{line}'].number_format = money_format
+
+        note = Font(name='Arial', size=9, italic=True, color='808080')
+        summary['A7'] = '아래는 대조용으로 추가한 항목입니다. 위 4개 산식은 템플릿 원본 그대로입니다.'
+        summary['A7'].font = note
+        additions = [
+            ('기타 (Other — 손익 아님)',
+             '=SUMIF(Sheet1!B2:B500,"기타",Sheet1!D2:D500)', money_format),
+            ('거래 건수 (Transactions)', '=COUNTA(Sheet1!A2:A500)', '0'),
+            ('기간 (Period)', f'{rows[0].date} ~ {rows[-1].date}', None),
+        ]
+        for offset, (label, value, number_format) in enumerate(additions, start=8):
+            summary[f'A{offset}'] = label
+            summary[f'B{offset}'] = value
+            summary[f'A{offset}'].font = body
+            summary[f'B{offset}'].font = body
+            if number_format:
+                summary[f'B{offset}'].number_format = number_format
+
+        company = config.load()
+        footnotes = [
+            f'출처: {company.name} · CommBank 계좌 명세서. 은행이 인쇄한 차변·대변 '
+            '합계와 대조하여 일치 확인함.',
+            'GST 금액(F열)과 순금액(G열)은 산식입니다. 금액(D열)을 고치면 함께 바뀝니다.',
+            '"기타"는 손익이 아닌 이동입니다 — 디렉터 대여금 입출금, ATO BAS 납부. '
+            '수입·비용에 넣으면 순이익이 왜곡되므로 분리했습니다.',
+            '접대비와 벌금은 손금불산입 항목입니다. 카테고리에 표시해 두었습니다.',
+        ]
+        for offset, text in enumerate(footnotes, start=12):
+            summary[f'A{offset}'] = text
+            summary[f'A{offset}'].font = note
+
+    workbook.save(args.out)
+    print(f'{args.out}')
+    print(f'  {figures["count"]}건  ·  {rows[0].date} ~ {rows[-1].date}')
+    print(f'  수입 {fmt(figures["income"])}   비용 {fmt(figures["expenses"])}   '
+          f'기타 {fmt(figures["other"])}   GST {fmt(figures["gst"])}')
+    print('  F열(GST)과 G열(순금액)은 산식입니다. Excel에서 열면 계산됩니다.')
+    return 0
+
+
 # ------------------------------------------------------------------- calendar
 
 def cmd_calendar(args):
@@ -1306,6 +1422,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--note')
     p.set_defaults(func=cmd_rule_add)
     rule_sub.add_parser('list').set_defaults(func=cmd_rule_list)
+
+    p = sub.add_parser('export-xlsx',
+                       help='fill a bookkeeping spreadsheet from the books')
+    p.add_argument('template', help='the .xlsx template to fill')
+    p.add_argument('out', help='where to write the filled copy')
+    p.add_argument('--period', help='FY2026, 2026Q4, or a date range')
+    p.add_argument('--from', dest='start')
+    p.add_argument('--to', dest='end')
+    p.set_defaults(func=cmd_export_xlsx)
 
     p = sub.add_parser('lodge', help='what to type into an ATO form, field by field')
     p.add_argument('kind', choices=sorted(lodge_mod.PACKS))

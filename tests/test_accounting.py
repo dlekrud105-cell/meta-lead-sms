@@ -10,7 +10,7 @@ from decimal import Decimal
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from accounting import abn  # noqa: E402
-from accounting import amortise, lodge  # noqa: E402
+from accounting import amortise, export_template, lodge  # noqa: E402
 from accounting import (accounts as coa, bankimport, bankrules,  # noqa: E402
                         bankstatement, calendar_au as cal, config, contacts,
                         jobs, ledger, lodgements, periods, reports as rp,
@@ -1138,6 +1138,88 @@ class AssetDepositTests(BooksTestCase):
                               gst_free='1769.00', deposit='2000.00',
                               financed='51745.00')
         self.assertTrue(any('Q1 FY2027' in n for n in result['notes']))
+
+
+class ExportTemplateTests(BooksTestCase):
+    """Rows for the tax agent's bookkeeping spreadsheet."""
+
+    def setUp(self):
+        super().setUp()
+        contacts.add('Active Building Group', contacts.CUSTOMER)
+        contacts.add('J Han', contacts.SUBCONTRACTOR, abn='60280356376')
+        self._bank_line('2026-05-28', 'Fast Transfer From ACTIVE BUILDING GROUP',
+                        '11550.00', 'credit', '4010', 'GST')
+        self._bank_line('2026-06-11', 'DULUX LIDCOMBE MEGA', '221.72',
+                        'debit', '5100', 'GST')
+        self._bank_line('2026-03-20', 'Direct Debit 502040 ICARE NSW', '658.83',
+                        'debit', '6030', 'GST')
+        self._bank_line('2026-02-19', 'Transfer from CommBank app chungyeon kim',
+                        '500.00', 'credit', '2600', 'NT')
+        self._bank_line('2026-06-02', 'TAX OFFICE PAYMENTS BPAY', '68.00',
+                        'debit', '2100', 'NT')
+
+    def _bank_line(self, when, description, amount, direction, account, tax_code):
+        from accounting import store
+        store.BANK_LINES.append({
+            'fingerprint': f'{when}{amount}{direction}', 'date': when,
+            'description': description, 'amount': amount, 'direction': direction,
+            'account': account, 'tax_code': tax_code, 'contact': '',
+            'entry_id': 'JE00001', 'imported_on': when})
+
+    def test_income_expense_and_neither_are_separated(self):
+        rows = {r.description[:6]: r for r in export_template.bookkeeping_rows()}
+        self.assertEqual(rows['Fast T'].kind, '수입')
+        self.assertEqual(rows['DULUX '].kind, '비용')
+        # A director putting money in is not income; a BAS payment is not an
+        # expense. Forcing either into the summary would distort the profit.
+        self.assertEqual(rows['Transf'].kind, '기타')
+        self.assertEqual(rows['TAX OF'].kind, '기타')
+
+    def test_gst_is_an_eleventh_of_a_taxable_amount(self):
+        row = [r for r in export_template.bookkeeping_rows()
+               if 'DULUX' in r.description][0]
+        self.assertEqual(row.gst_included, 'Y')
+        self.assertEqual(row.gst, Decimal('20.16'))
+        self.assertEqual(row.net, Decimal('201.56'))
+        self.assertEqual(row.gst + row.net, row.amount)
+
+    def test_a_non_taxable_line_carries_no_gst(self):
+        row = [r for r in export_template.bookkeeping_rows()
+               if 'TAX OFFICE' in r.description][0]
+        self.assertEqual(row.gst_included, 'N')
+        self.assertEqual(row.gst, Decimal('0.00'))
+        self.assertEqual(row.net, row.amount)
+
+    def test_payment_method_is_read_off_the_wording(self):
+        rows = {r.description[:6]: r for r in export_template.bookkeeping_rows()}
+        self.assertIn('Direct Debit', rows['Direct'].method)
+        self.assertIn('Bank Transfer', rows['Fast T'].method)
+        self.assertIn('Card', rows['DULUX '].method)
+
+    def test_non_deductible_categories_say_so(self):
+        self.assertIn('손금불산입', export_template.category_for('6960'))
+        self.assertIn('손금불산입', export_template.category_for('6950'))
+
+    def test_rows_come_back_in_date_order(self):
+        dates = [r.date for r in export_template.bookkeeping_rows()]
+        self.assertEqual(dates, sorted(dates))
+
+    def test_a_period_filters_the_rows(self):
+        rows = export_template.bookkeeping_rows('2026-06-01', '2026-06-30')
+        self.assertEqual({r.date for r in rows}, {'2026-06-11', '2026-06-02'})
+
+    def test_totals_match_the_rows(self):
+        rows = export_template.bookkeeping_rows()
+        figures = export_template.totals(rows)
+        self.assertEqual(figures['count'], 5)
+        self.assertEqual(figures['income'], Decimal('11550.00'))
+        self.assertEqual(figures['expenses'], Decimal('880.55'))
+        self.assertEqual(figures['other'], Decimal('568.00'))
+
+    def test_every_account_in_the_chart_has_a_kind(self):
+        for account in coa.CHART:
+            self.assertIn(export_template.kind_for(account.code),
+                          ('수입', '비용', '기타'))
 
 
 if __name__ == '__main__':
