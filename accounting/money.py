@@ -16,7 +16,9 @@ def money(value) -> Decimal:
         return ZERO
     if isinstance(value, float):
         value = repr(value)
-    return Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
+    result = Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
+    # Decimal keeps the sign on zero, which surfaces as '-0.00' in reports.
+    return ZERO if result == 0 else result
 
 
 def fmt(value) -> str:

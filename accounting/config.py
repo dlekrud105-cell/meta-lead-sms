@@ -57,6 +57,13 @@ class Company:
     registered_date: str = ''      # ASIC registration date, ISO format
     gst_registered: bool = True
     gst_cycle: str = 'quarterly'
+    # 'cash' reports GST when money moves, 'accruals' when the invoice is
+    # raised. It is on the activity statement under 'GST accounting method'
+    # and it has to match, or the BAS will not agree with what the ATO expects.
+    gst_basis: str = 'cash'
+    # A registered BAS or tax agent gets later lodgement dates.
+    uses_tax_agent: bool = False
+    tax_agent: str = ''
     base_rate_entity: bool = True
     reports_tpar: bool = True      # building & construction industry
     default_bank: str = '1000'
@@ -80,6 +87,10 @@ class Company:
     @property
     def no_abn_withholding_rate(self) -> Decimal:
         return self.rate('no_abn_withholding_rate')
+
+    @property
+    def cash_basis(self) -> bool:
+        return self.gst_basis.strip().lower() == 'cash'
 
     # -------------------------------------------------------------- directors
     def director(self, key: str) -> Director:
@@ -110,6 +121,8 @@ class Company:
             'abn': self.abn, 'acn': self.acn, 'state': self.state,
             'address': self.address, 'registered_date': self.registered_date,
             'gst_registered': self.gst_registered, 'gst_cycle': self.gst_cycle,
+            'gst_basis': self.gst_basis, 'uses_tax_agent': self.uses_tax_agent,
+            'tax_agent': self.tax_agent,
             'base_rate_entity': self.base_rate_entity,
             'reports_tpar': self.reports_tpar,
             'default_bank': self.default_bank, 'savings_bank': self.savings_bank,

@@ -9,15 +9,23 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 # BAS/super quarters, keyed by the quarter's ordinal within the financial year.
-# (start month, start day, end month, end day, due month, due day, due year offset)
-# Due dates are the standard self-lodgement dates; a registered BAS/tax agent
-# usually gets around four extra weeks on the BAS ones.
+# (label, start month, end month, due month, due day, due year offset,
+#  agent due month, agent due day, agent due year offset)
+#
+# Two sets of BAS dates. The plain ones are for lodging it yourself. The agent
+# ones are the lodgement program concessions a registered BAS or tax agent
+# gets - Q2 has no concession because it already falls after the summer break.
 _QUARTERS = {
-    1: ('Q1', 7, 9, 10, 28, 0),   # Jul-Sep, due 28 Oct same calendar year
-    2: ('Q2', 10, 12, 2, 28, 1),  # Oct-Dec, due 28 Feb next calendar year
-    3: ('Q3', 1, 3, 4, 28, 0),    # Jan-Mar, due 28 Apr same calendar year
-    4: ('Q4', 4, 6, 7, 28, 0),    # Apr-Jun, due 28 Jul same calendar year
+    1: ('Q1', 7, 9, 10, 28, 0, 11, 25, 0),   # Jul-Sep: 28 Oct, agent 25 Nov
+    2: ('Q2', 10, 12, 2, 28, 1, 2, 28, 1),   # Oct-Dec: 28 Feb, no concession
+    3: ('Q3', 1, 3, 4, 28, 0, 5, 26, 0),     # Jan-Mar: 28 Apr, agent 26 May
+    4: ('Q4', 4, 6, 7, 28, 0, 8, 25, 0),     # Apr-Jun: 28 Jul, agent 25 Aug
 }
+
+# Pay Day Super: from this date superannuation must be paid at the same time as
+# the wage it relates to, not banked up and paid quarterly.
+PAYDAY_SUPER_START = date(2026, 7, 1)
+PAYDAY_SUPER_DAYS = 7
 
 
 def parse_date(value) -> date:
@@ -50,8 +58,17 @@ class Quarter:
     number: int      # 1-4 within that FY
     start: date
     end: date
-    bas_due: date
+    bas_due: date        # lodging it yourself
+    bas_due_agent: date  # through a registered BAS or tax agent
     super_due: date
+
+    @property
+    def quarterly_super_applies(self) -> bool:
+        """False once Pay Day Super has taken over from quarterly payments."""
+        return self.start < PAYDAY_SUPER_START
+
+    def due(self, uses_agent: bool = False) -> date:
+        return self.bas_due_agent if uses_agent else self.bas_due
 
     @property
     def label(self) -> str:
@@ -62,17 +79,20 @@ class Quarter:
 
 
 def quarter(fy: int, number: int) -> Quarter:
-    _, start_month, end_month, due_month, due_day, due_offset = _QUARTERS[number]
+    (_, start_month, end_month, due_month, due_day, due_offset,
+     agent_month, agent_day, agent_offset) = _QUARTERS[number]
     # Q1/Q2 fall in the earlier calendar year, Q3/Q4 in the later one.
     start_year = fy - 1 if start_month >= 7 else fy
     end_year = fy - 1 if end_month >= 7 else fy
     start = date(start_year, start_month, 1)
     end = end_of_month(end_year, end_month)
     due = date(end_year + due_offset, due_month, due_day)
-    # Super guarantee and BAS share the same 28-day-after-quarter-end deadline,
-    # but super must be *received by the fund* by then, not merely lodged.
+    agent_due = date(end_year + agent_offset, agent_month, agent_day)
+    # Quarterly super shares the 28-day deadline, but the money must be
+    # *received by the fund* by then, not merely lodged. There is no agent
+    # concession on super. From 1 July 2026 Pay Day Super replaces this.
     return Quarter(fy=fy, number=number, start=start, end=end,
-                   bas_due=due, super_due=due)
+                   bas_due=due, bas_due_agent=agent_due, super_due=due)
 
 
 def quarter_of(d) -> Quarter:

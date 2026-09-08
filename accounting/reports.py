@@ -18,7 +18,8 @@ from . import store
 from . import taxcodes
 from . import transactions as tx
 from .money import ZERO, money
-from .periods import fy_ending, fy_range, parse_date, quarter_of
+from .periods import (PAYDAY_SUPER_DAYS, PAYDAY_SUPER_START, fy_ending,
+                      fy_range, parse_date, quarter_of)
 
 
 @dataclass
@@ -148,6 +149,7 @@ class Bas:
     start: date
     end: date
     due: date
+    basis: str                  # 'cash' or 'accruals'
     g1: Decimal                 # total sales including GST
     g3: Decimal                 # GST-free sales
     g10: Decimal                # capital purchases including GST
@@ -158,6 +160,8 @@ class Bas:
     w2: Decimal                 # PAYG withheld from wages
     w4: Decimal                 # withheld where no ABN quoted
     payg_instalment: Decimal    # 5A, as notified by the ATO
+    deferred_gst_sales: Decimal = ZERO      # GST on invoices not yet paid
+    deferred_gst_purchases: Decimal = ZERO  # credits on bills not yet paid
     checks: list = field(default_factory=list)
 
     @property
@@ -174,42 +178,162 @@ class Bas:
         return money(self.net_gst + self.w5 + self.payg_instalment)
 
 
-def bas(start, end, label='', payg_instalment=0) -> Bas:
-    start, end = parse_date(start), parse_date(end)
-    exclude = (tx.BAS_PAYMENT,)
-    g1 = g3 = g10 = g11 = ZERO
-    computed_sales_gst = computed_purchase_gst = ZERO
+@dataclass
+class TaxEvent:
+    """One taxable amount reaching the BAS: a sale or a purchase, GST-exclusive."""
+    kind: str          # 'sale' or 'purchase'
+    account: str
+    amount_ex: Decimal
+    tax_code: str
 
-    for line in ledger.lines(start=start, end=end, exclude_sources=exclude):
+
+def _accrual_events(start, end) -> list:
+    """Sales and purchases by document date, which is the accruals basis."""
+    events = []
+    for line in ledger.lines(start=start, end=end,
+                             exclude_sources=(tx.BAS_PAYMENT,)):
         account = coa.get(line.account)
-        code = taxcodes.get(line.tax_code)
-        if code.code == 'NT':
-            continue
         if account.type == coa.INCOME:
-            amount_ex = money(line.credit - line.debit)
-            gst = taxcodes.gst_on(amount_ex, code.code)
-            computed_sales_gst += gst
-            if 'G1' in code.sale_labels:
-                g1 += money(amount_ex + gst)
-            if 'G3' in code.sale_labels:
-                g3 += amount_ex
+            events.append(TaxEvent('sale', line.account,
+                                   money(line.credit - line.debit), line.tax_code))
         elif account.type in (coa.COGS, coa.EXPENSE) or account.role == 'fixed_asset':
-            amount_ex = money(line.debit - line.credit)
-            gst = taxcodes.gst_on(amount_ex, code.code)
-            computed_purchase_gst += gst
-            if 'G10' in code.purchase_labels:
-                g10 += money(amount_ex + gst)
-            if 'G11' in code.purchase_labels:
-                g11 += money(amount_ex + gst)
+            events.append(TaxEvent('purchase', line.account,
+                                   money(line.debit - line.credit), line.tax_code))
+    return events
 
-    gst_on_sales = ledger.movement(coa.first_with_role('gst_collected').code,
-                                   start, end, exclude_sources=exclude)
-    gst_on_purchases = ledger.movement(coa.first_with_role('gst_paid').code,
-                                       start, end, exclude_sources=exclude)
+
+def _document_composition(doc_id: str, source: str):
+    """How a document splits across accounts and tax codes, GST-exclusive.
+
+    Returns (parts, total_incl) where parts is a list of TaxEvent-shaped
+    tuples. Used to attribute a part payment back to what was actually bought
+    or sold, which is what the cash basis needs.
+    """
+    kind = 'sale' if source == tx.INVOICE else 'purchase'
+    parts, total_incl = [], ZERO
+    for line in ledger.lines(doc_ref=doc_id, sources=(source,)):
+        account = coa.get(line.account)
+        is_income = account.type == coa.INCOME
+        is_cost = (account.type in (coa.COGS, coa.EXPENSE)
+                   or account.role == 'fixed_asset')
+        if not (is_income or is_cost):
+            continue
+        amount_ex = (money(line.credit - line.debit) if is_income
+                     else money(line.debit - line.credit))
+        if amount_ex == ZERO:
+            continue
+        parts.append((account.code, amount_ex, line.tax_code))
+        total_incl += money(amount_ex + taxcodes.gst_on(amount_ex, line.tax_code))
+    return kind, parts, money(total_incl)
+
+
+def _cash_events(start, end) -> list:
+    """Sales and purchases by when the money moved, which is the cash basis.
+
+    A payment against an invoice or bill is split back across that document's
+    own lines in proportion, so a part payment of a mixed-tax-code document
+    reports the right amount under each code.
+    """
+    events = []
+
+    # Money received against invoices, and money paid against bills.
+    for payment_source, document_source, control_role in (
+            (tx.RECEIPT, tx.INVOICE, 'ar'), (tx.BILL_PAYMENT, tx.BILL, 'ap')):
+        control = coa.first_with_role(control_role).code
+        for line in ledger.lines(start=start, end=end, sources=(payment_source,),
+                                 account=control):
+            amount = abs(money(line.debit - line.credit))
+            if amount == ZERO or not line.doc_ref:
+                continue
+            kind, parts, total_incl = _document_composition(line.doc_ref,
+                                                            document_source)
+            if total_incl <= ZERO:
+                continue
+            share = amount / total_incl
+            for account, amount_ex, tax_code in parts:
+                events.append(TaxEvent(kind, account, money(amount_ex * share),
+                                       tax_code))
+
+    # Money that moved without a document behind it.
+    for line in ledger.lines(start=start, end=end,
+                             sources=(tx.SPEND, tx.RECEIVE)):
+        account = coa.get(line.account)
+        if account.type == coa.INCOME:
+            events.append(TaxEvent('sale', line.account,
+                                   money(line.credit - line.debit), line.tax_code))
+        elif account.type in (coa.COGS, coa.EXPENSE) or account.role == 'fixed_asset':
+            events.append(TaxEvent('purchase', line.account,
+                                   money(line.debit - line.credit), line.tax_code))
+    return events
+
+
+def bas(start, end, label='', payg_instalment=0, basis=None, company=None) -> Bas:
+    """Build the activity statement.
+
+    `basis` must match the GST accounting method printed on the activity
+    statement. Cash reports GST when the money moves; accruals reports it when
+    the invoice is raised.
+    """
+    company = company or config.load()
+    basis = (basis or company.gst_basis).strip().lower()
+    if basis not in ('cash', 'accruals'):
+        raise ValueError("GST basis must be 'cash' or 'accruals'")
+    start, end = parse_date(start), parse_date(end)
+
+    events = _cash_events(start, end) if basis == 'cash' else _accrual_events(start, end)
+
+    g1 = g3 = g10 = g11 = ZERO
+    sales_gst = purchase_gst = ZERO
+    for event in events:
+        code = taxcodes.get(event.tax_code)
+        if code.code == 'NT' or event.amount_ex == ZERO:
+            continue
+        gst = taxcodes.gst_on(event.amount_ex, code.code)
+        if event.kind == 'sale':
+            sales_gst += gst
+            if 'G1' in code.sale_labels:
+                g1 += money(event.amount_ex + gst)
+            if 'G3' in code.sale_labels:
+                g3 += event.amount_ex
+        else:
+            purchase_gst += gst
+            if 'G10' in code.purchase_labels:
+                g10 += money(event.amount_ex + gst)
+            if 'G11' in code.purchase_labels:
+                g11 += money(event.amount_ex + gst)
+
+    checks = []
+    deferred_sales = deferred_purchases = ZERO
+    if basis == 'accruals':
+        # On accruals the GST control accounts are authoritative: they hold
+        # what was actually posted. Report those and flag any disagreement.
+        ledger_sales_gst = ledger.movement(
+            coa.first_with_role('gst_collected').code, start, end,
+            exclude_sources=(tx.BAS_PAYMENT,))
+        ledger_purchase_gst = ledger.movement(
+            coa.first_with_role('gst_paid').code, start, end,
+            exclude_sources=(tx.BAS_PAYMENT,))
+        if money(sales_gst) != ledger_sales_gst:
+            checks.append(
+                f'1A is {ledger_sales_gst} in the ledger but the tax codes on '
+                f'income lines add to {money(sales_gst)}. Check for a manual '
+                'journal that moved GST without a matching sale.')
+        if money(purchase_gst) != ledger_purchase_gst:
+            checks.append(
+                f'1B is {ledger_purchase_gst} in the ledger but the tax codes on '
+                f'purchase lines add to {money(purchase_gst)}. Check for a manual '
+                'journal that moved GST without a matching purchase.')
+        sales_gst, purchase_gst = ledger_sales_gst, ledger_purchase_gst
+    else:
+        # On cash, GST sitting on unpaid documents is not reportable yet.
+        # Showing it separately makes the timing difference visible.
+        deferred_sales = _deferred_gst(tx.INVOICE, end)
+        deferred_purchases = _deferred_gst(tx.BILL, end)
 
     w1 = ZERO
     for account in coa.by_role('wages'):
-        w1 += ledger.net(account.code, start, end, exclude_sources=exclude)
+        w1 += ledger.net(account.code, start, end,
+                         exclude_sources=(tx.BAS_PAYMENT,))
 
     withholding_account = coa.first_with_role('payg_withholding').code
     w2 = w4 = ZERO
@@ -219,24 +343,27 @@ def bas(start, end, label='', payg_instalment=0) -> Bas:
         elif line.source == tx.BILL:
             w4 += money(line.credit - line.debit)
 
-    checks = []
-    if money(computed_sales_gst) != gst_on_sales:
-        checks.append(
-            f'1A is {gst_on_sales} in the ledger but the tax codes on income '
-            f'lines add to {money(computed_sales_gst)}. Check for a manual '
-            'journal that moved GST without a matching sale.')
-    if money(computed_purchase_gst) != gst_on_purchases:
-        checks.append(
-            f'1B is {gst_on_purchases} in the ledger but the tax codes on '
-            f'purchase lines add to {money(computed_purchase_gst)}. Check for '
-            'a manual journal that moved GST without a matching purchase.')
-
     quarter = quarter_of(end)
     return Bas(label=label or quarter.label, start=start, end=end,
-               due=quarter.bas_due, g1=money(g1), g3=money(g3), g10=money(g10),
-               g11=money(g11), gst_on_sales=gst_on_sales,
-               gst_on_purchases=gst_on_purchases, w1=money(w1), w2=money(w2),
-               w4=money(w4), payg_instalment=money(payg_instalment), checks=checks)
+               due=quarter.due(company.uses_tax_agent), basis=basis,
+               g1=money(g1), g3=money(g3), g10=money(g10), g11=money(g11),
+               gst_on_sales=money(sales_gst), gst_on_purchases=money(purchase_gst),
+               w1=money(w1), w2=money(w2), w4=money(w4),
+               payg_instalment=money(payg_instalment),
+               deferred_gst_sales=deferred_sales,
+               deferred_gst_purchases=deferred_purchases, checks=checks)
+
+
+def _deferred_gst(doc_type: str, as_at) -> Decimal:
+    """GST sitting on documents that have not been paid yet."""
+    source = tx.INVOICE if doc_type == tx.INVOICE else tx.BILL
+    total = ZERO
+    for doc, remaining in tx.open_documents(doc_type, as_at):
+        _, _, total_incl = _document_composition(doc['doc_id'], source)
+        if total_incl <= ZERO:
+            continue
+        total += money(money(doc['gst']) * (remaining / total_incl))
+    return money(total)
 
 
 # ------------------------------------------------------------------------ TPAR
@@ -532,6 +659,58 @@ def _first_activity(account_code: str):
     """Date of the earliest entry on an account, or None if it has never moved."""
     dates = [l.date for l in ledger.lines(account=account_code)]
     return min(dates) if dates else None
+
+
+@dataclass
+class SuperObligation:
+    pay_date: date
+    amount: Decimal
+    due: date
+    paid: Decimal
+
+    @property
+    def outstanding(self) -> Decimal:
+        return money(self.amount - self.paid)
+
+    def is_late(self, as_at) -> bool:
+        return self.outstanding > ZERO and parse_date(as_at) > self.due
+
+
+def super_obligations(as_at, company=None) -> list:
+    """Each pay run's super and whether it has been paid in time.
+
+    Before 1 July 2026 super was a quarterly obligation, due 28 days after the
+    quarter ends. From that date Pay Day Super applies: the money has to reach
+    the fund within seven days of the pay day it belongs to. Payments are
+    matched to pay runs oldest first.
+    """
+    as_at = parse_date(as_at)
+    accrued, paid_total = [], ZERO
+    super_account = coa.first_with_role('super_payable').code
+
+    for line in sorted(ledger.lines(end=as_at, account=super_account),
+                       key=lambda l: (l.date, l.entry_id)):
+        credited = money(line.credit - line.debit)
+        if credited > ZERO:
+            accrued.append([line.date, credited])
+        elif credited < ZERO:
+            paid_total += -credited
+
+    obligations, remaining = [], paid_total
+    for pay_date, amount in accrued:
+        applied = min(remaining, amount)
+        remaining = money(remaining - applied)
+        if pay_date >= PAYDAY_SUPER_START:
+            due = date.fromordinal(pay_date.toordinal() + PAYDAY_SUPER_DAYS)
+        else:
+            due = quarter_of(pay_date).super_due
+        obligations.append(SuperObligation(pay_date=pay_date, amount=amount,
+                                           due=due, paid=money(applied)))
+    return obligations
+
+
+def late_super(as_at, company=None) -> list:
+    return [o for o in super_obligations(as_at, company) if o.is_late(as_at)]
 
 
 @dataclass

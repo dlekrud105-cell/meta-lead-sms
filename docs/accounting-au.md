@@ -2,6 +2,10 @@
 
 호주(NSW) 페인팅 Pty Ltd — 디렉터 2명, GST 등록(분기 BAS), 하청업자(subcontractor) 사용 기준.
 
+> **GST 신고 기준(cash/accruals)을 반드시 확인하세요.** Activity Statement의
+> `GST accounting method` 항목에 나옵니다. YOUR PAINTER SERVICE PTY LTD는 **Cash**입니다.
+> 기준이 다르면 BAS 숫자가 ATO 기대치와 안 맞습니다.
+
 모든 명령은 레포 루트에서 실행합니다.
 
 ```bash
@@ -20,7 +24,9 @@ python3 -m accounting setup \
   --abn 12345678901 \
   --registered 2026-01-15 \
   --director "디렉터1 이름" \
-  --director "디렉터2 이름"
+  --director "디렉터2 이름" \
+  --gst-basis cash \
+  --tax-agent "Woori Accounting Services"
 
 # 확인
 python3 -m accounting company
@@ -39,6 +45,7 @@ python3 -m accounting accounts 서브    # 검색도 가능 (accounts subcontrac
 | `contacts.csv` | 고객·공급업체·하청업자 |
 | `documents.csv` | 인보이스·청구서 대장 |
 | `jobs.csv` | 현장/작업 |
+| `lodgements.csv` | 신고 완료 기록 (회계사가 이미 낸 것) |
 | `accounts.csv` | 계정과목표 (참고용 출력) |
 
 > `data/`는 `.gitignore`에 들어 있습니다. 실제 재무데이터를 git에 올리려면 그 줄을 지우세요.
@@ -171,6 +178,57 @@ python3 -m accounting report loans
 
 ---
 
+## 4-1. Cash vs Accruals — 이게 왜 중요한가
+
+| | Cash 기준 | Accruals 기준 |
+|---|---|---|
+| GST 신고 시점 | **돈이 실제로 오갈 때** | 인보이스 발행/수취 시점 |
+| 미수금에 붙은 GST | 아직 안 냄 | 이미 냄 |
+| 현금흐름 | 유리 | 불리 |
+
+우리 회사는 **Cash**입니다. 그래서:
+
+- 인보이스를 끊어도 **입금 전에는 BAS에 안 올라갑니다**
+- 부분 입금이면 그 비율만큼만 올라갑니다 (세금코드별로 안분됨)
+- 청구서를 받아도 **지급 전에는 매입세액 공제를 못 받습니다**
+
+```bash
+python3 -m accounting report bas --period 2026Q3
+```
+
+출력 하단에 아직 신고 대상이 아닌 금액이 따로 나옵니다:
+
+```
+  Not on this BAS because the money has not moved yet:
+    GST on unpaid invoices you issued      800.00  (payable when they pay you)
+    GST credits on bills you owe           200.00  (claimable when you pay)
+```
+
+기준을 바꿔서 비교해보려면 `--basis accruals`를 붙이세요.
+
+---
+
+## 4-2. Pay Day Super (2026년 7월 1일 시행)
+
+**분기별 연금 납부는 끝났습니다.** 이제 급여를 줄 때마다 7일 이내에 펀드에 도착해야 합니다.
+
+```bash
+python3 -m accounting report super
+```
+
+```
+  Pay date    Super  Due         Paid  Outstanding  Status
+  2026-07-20  240.00 2026-07-27  0.00       240.00  LATE
+```
+
+시스템이 급여일 기준으로 마감일을 계산하고, `check`에서 늦은 건을 잡아냅니다.
+2026년 6월 30일 이전 급여는 기존 분기 규칙(28일)으로 계산됩니다.
+
+> 급여를 아예 안 주는 회사면 super·STP 마감일이 표시되지 않습니다. 급여를 처음 지급하는
+> 순간부터 자동으로 나타납니다.
+
+---
+
 ## 5. 분기 업무 (BAS)
 
 ```bash
@@ -241,6 +299,33 @@ python3 -m accounting report tax --fy 2026                     # 법인세 추�
 
 ---
 
+## 6-1. 회계사가 이미 신고한 것 기록하기
+
+세무대리인이 대신 신고했으면 시스템은 그걸 모릅니다. 기록해두면 마감 알림에서 사라집니다.
+
+```bash
+python3 -m accounting lodged BAS "Q3 FY2026" \
+  --date 2026-05-30 --ref 59741490849 --amount 68 \
+  --by "Woori Accounting Services"
+
+python3 -m accounting lodgements          # 지금까지 신고한 것 전체
+python3 -m accounting lodged BAS "Q3 FY2026" --undo   # 잘못 넣었으면
+```
+
+`kind`는 `BAS` / `TPAR` / `STP` / `TAX_RETURN` / `ASIC`,
+`period`는 `"Q3 FY2026"` / `"FY2026"` / `"2027"` 형식입니다.
+
+**세무대리인 마감일 연장**은 `--tax-agent`를 설정하면 자동 적용됩니다:
+
+| 분기 | 자체신고 | 세무대리인 |
+|---|---|---|
+| Q1 (7–9월) | 10/28 | **11/25** |
+| Q2 (10–12월) | 2/28 | 2/28 (연장 없음) |
+| Q3 (1–3월) | 4/28 | **5/26** |
+| Q4 (4–6월) | 7/28 | **8/25** |
+
+---
+
 ## 7. 매주 한 번: `check`
 
 이 한 줄이 "지금 문제가 뭔가"를 다 알려줍니다.
@@ -251,7 +336,8 @@ python3 -m accounting check
 
 잡아내는 것:
 - 대차 불일치
-- 지난 신고 마감 (BAS / super / TPAR / STP / 법인세 / ASIC)
+- 지난 신고 마감 (BAS / super / TPAR / STP / 법인세 / ASIC) — 이미 신고 기록한 건 제외
+- **Pay Day Super 지연** (급여일 + 7일 초과)
 - Division 7A 노출 — 마감된 회계연도 잔액까지
 - ABN 없는 하청업자
 - TPAR에 필요한 정보가 빠진 payee
@@ -285,6 +371,7 @@ python3 -m accounting report <이름> [--period FY2026 | --from ... --to ...]
 | `jobs` | 현장별 수익성 |
 | `cash` | 현금 포지션 + 떼둬야 할 금액 |
 | `tax` | 법인세 추정 |
+| `super` | 급여별 연금 납부 현황 + 지연 |
 | `loans` | 디렉터 대여금 + Div 7A |
 
 기간 지정: `--period FY2026`, `--period 2026Q3`, `--from 2026-01-01 --to 2026-03-31`

@@ -11,6 +11,7 @@ from . import config
 from . import contacts as contacts_mod
 from . import jobs as jobs_mod
 from . import ledger
+from . import lodgements as lodgements_mod
 from . import reports as rp
 from . import store
 from . import transactions as tx
@@ -54,6 +55,11 @@ def cmd_setup(args):
     company.registered_date = args.registered or company.registered_date
     if args.no_gst:
         company.gst_registered = False
+    if args.gst_basis:
+        company.gst_basis = args.gst_basis
+    if args.tax_agent is not None:
+        company.tax_agent = args.tax_agent
+        company.uses_tax_agent = bool(args.tax_agent)
     if args.directors:
         defaults = config.default_directors()
         company.directors = []
@@ -74,7 +80,9 @@ def cmd_setup(args):
     print(f'Books ready in {store.data_dir()}')
     print(f'  Company     {company.name}')
     print(f'  Registered  {company.registered_date or "(not set - use --registered)"}')
-    print(f'  GST         {"registered, " + company.gst_cycle if company.gst_registered else "not registered"}')
+    print(f'  GST         {"registered, " + company.gst_cycle + ", " + company.gst_basis + " basis" if company.gst_registered else "not registered"}')
+    if company.uses_tax_agent:
+        print(f'  Tax agent   {company.tax_agent} (extended lodgement dates)')
     print(f'  Directors   {", ".join(d.name for d in company.directors)}')
     print(f'  Accounts    {len(coa.CHART)} in accounts.csv')
     if not company.registered_date:
@@ -91,8 +99,10 @@ def cmd_company(args):
         ['ACN', company.acn or '(not set)'],
         ['Registered', company.registered_date or '(not set)'],
         ['State', company.state],
-        ['GST', f'registered, {company.gst_cycle}' if company.gst_registered
-         else 'not registered'],
+        ['GST', f'registered, {company.gst_cycle}, {company.gst_basis} basis'
+         if company.gst_registered else 'not registered'],
+        ['Tax agent', f'{company.tax_agent} - extended lodgement dates'
+         if company.uses_tax_agent else 'self-lodging'],
         ['Company tax rate', f'{company.company_tax_rate:.0%}'
          + (' (base rate entity)' if company.base_rate_entity else '')],
         ['Super guarantee', f'{company.super_rate:.0%}'],
@@ -345,9 +355,11 @@ def _report_bs(args):
 
 def _report_bas(args):
     start, end, label = _period(args)
-    report = rp.bas(start, end, label, payg_instalment=args.instalment or 0)
+    report = rp.bas(start, end, label, payg_instalment=args.instalment or 0,
+                    basis=args.basis)
     print(heading(f'Business activity statement  {report.label}'))
-    print(f'  Period {report.start} to {report.end}   Due {report.due}')
+    print(f'  Period {report.start} to {report.end}   Due {report.due}   '
+          f'GST accounting method: {report.basis}')
     rows = [
         ['G1', 'Total sales (including GST)', fmt(report.g1)],
         ['G3', 'Other GST-free sales', fmt(report.g3)],
@@ -364,6 +376,13 @@ def _report_bas(args):
          fmt(abs(report.net_amount))],
     ]
     print(table(['Label', 'Description', 'Amount'], rows, align='llr'))
+    if report.basis == 'cash' and (report.deferred_gst_sales
+                                   or report.deferred_gst_purchases):
+        print(f'\n  Not on this BAS because the money has not moved yet:')
+        print(f'    GST on unpaid invoices you issued   '
+              f'{fmt(report.deferred_gst_sales):>10}  (payable when they pay you)')
+        print(f'    GST credits on bills you owe        '
+              f'{fmt(report.deferred_gst_purchases):>10}  (claimable when you pay)')
     for message in report.checks:
         print(f'\n  ! {message}')
     if args.pay:
@@ -482,11 +501,63 @@ def _report_loans(args):
     return 0
 
 
+def _report_super(args):
+    as_at = args.end or today()
+    obligations = rp.super_obligations(as_at)
+    print(heading(f'Superannuation obligations as at {as_at}'))
+    rows = [[o.pay_date.isoformat(), fmt(o.amount), o.due.isoformat(),
+             fmt(o.paid), fmt(o.outstanding),
+             'LATE' if o.is_late(as_at) else ('paid' if not o.outstanding else 'due')]
+            for o in obligations]
+    print(table(['Pay date', 'Super', 'Due', 'Paid', 'Outstanding', 'Status'],
+                rows, align='lrlrrl'))
+    late = [o for o in obligations if o.is_late(as_at)]
+    if late:
+        print(f'\n  ! {len(late)} pay run(s) with super past its due date, '
+              f'{fmt(money(sum((o.outstanding for o in late), ZERO)))} in total. '
+              'Late super stops being deductible and turns into the '
+              'superannuation guarantee charge, which has to be lodged on an '
+              'SGC statement.')
+    print('\n  Pay runs from 2026-07-01 are under Pay Day Super: the money must '
+          'reach the fund within 7 days of the pay day, not at the end of the '
+          'quarter.')
+    return 0
+
+
 REPORTS = {
+    'super': _report_super,
     'tb': _report_tb, 'pl': _report_pl, 'bs': _report_bs, 'bas': _report_bas,
     'tpar': _report_tpar, 'ar': _report_ar, 'ap': _report_ap, 'jobs': _report_jobs,
     'cash': _report_cash, 'tax': _report_tax, 'loans': _report_loans,
 }
+
+
+def cmd_lodged(args):
+    if args.undo:
+        removed = lodgements_mod.remove(args.kind, args.period)
+        print('Removed.' if removed
+              else f'No record of {args.kind} for {args.period}.')
+        return 0 if removed else 2
+    item = lodgements_mod.record(
+        args.kind, args.period, args.date or today(), reference=args.ref or '',
+        amount=args.amount if args.amount is not None else '',
+        lodged_by=args.by or '', notes=args.notes or '')
+    print(f'{item.kind} {item.period} recorded as lodged {item.lodged_date}'
+          + (f' by {item.lodged_by}' if item.lodged_by else '')
+          + (f', ref {item.reference}' if item.reference else ''))
+    print('  It will no longer show as outstanding in calendar or check.')
+    return 0
+
+
+def cmd_lodgements(args):
+    rows = [[i.kind, i.period, i.lodged_date.isoformat(), i.reference or '-',
+             i.amount or '-', i.lodged_by or '-', i.notes]
+            for i in sorted(lodgements_mod.all_lodgements(),
+                            key=lambda i: i.lodged_date)]
+    print(heading('Lodged with the ATO and ASIC'))
+    print(table(['Kind', 'Period', 'Lodged', 'Reference', 'Amount', 'By', 'Notes'],
+                rows))
+    return 0
 
 
 # ------------------------------------------------------------------- calendar
@@ -506,8 +577,17 @@ def cmd_calendar(args):
         print(table(['Due', 'Kind', 'Period', 'Obligation'],
                     [[o.due.isoformat(), o.kind, o.period, o.label] for o in overdue],
                     indent='    '))
+        print('    Already lodged by your agent? Record it so it stops showing:')
+        print('      python3 -m accounting lodged BAS "Q3 FY2026" --date ... --by ...')
     else:
         print('\n  Nothing overdue.')
+
+    done = [o for o in cal.obligations(company) if o.is_done]
+    if done and args.detail:
+        print('\n  ALREADY LODGED')
+        print(table(['Kind', 'Period', 'Lodged', 'By'],
+                    [[o.kind, o.period, o.lodged.lodged_date.isoformat(),
+                      o.lodged.lodged_by or '-'] for o in done], indent='    '))
     print(f'\n  NEXT {args.days} DAYS')
     print(table(['Due', 'In', 'Kind', 'Period', 'Obligation'],
                 [[o.due.isoformat(), f'{o.days_out(as_at)}d', o.kind, o.period, o.label]
@@ -542,6 +622,12 @@ def cmd_check(args):
 
     for message in rp.division_7a_warnings(as_at, company):
         problems.append(message)
+
+    for obligation in rp.late_super(as_at, company):
+        problems.append(
+            f'Super of {fmt(obligation.outstanding)} for the {obligation.pay_date} '
+            f'pay run was due {obligation.due} and is still unpaid. Late super is '
+            'not deductible and has to go on an SGC statement.')
 
     for contact in contacts_mod.all_contacts():
         if contact.type == contacts_mod.SUBCONTRACTOR and not contact.abn:
@@ -615,6 +701,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--director', dest='directors', action='append',
                    help='director name, repeat for the second director')
     p.add_argument('--no-gst', action='store_true', help='not registered for GST')
+    p.add_argument('--gst-basis', choices=['cash', 'accruals'],
+                   help='must match the GST accounting method on your activity '
+                        'statement')
+    p.add_argument('--tax-agent',
+                   help='name of your registered BAS or tax agent; enables the '
+                        'extended lodgement dates. Pass an empty string to clear.')
     p.set_defaults(func=cmd_setup)
 
     sub.add_parser('company', help='show the company profile').set_defaults(
@@ -765,6 +857,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--to', dest='end')
     p.add_argument('--fy', type=int, help='financial year for tpar and tax')
     p.add_argument('--instalment', help='BAS label 5A as notified by the ATO')
+    p.add_argument('--basis', choices=['cash', 'accruals'],
+                   help='override the company GST accounting method')
     p.add_argument('--pay', action='store_true',
                    help='post the BAS settlement entry as well')
     p.add_argument('--pay-date')
@@ -775,6 +869,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--days', type=int, default=120)
     p.add_argument('--detail', action='store_true')
     p.set_defaults(func=cmd_calendar)
+
+    p = sub.add_parser('lodged', help='record something as lodged with the ATO')
+    p.add_argument('kind', help='BAS, TPAR, STP, TAX_RETURN or ASIC')
+    p.add_argument('period', help='"Q3 FY2026", "FY2026" or "2027"')
+    p.add_argument('--date', help='date it was lodged, defaults to today')
+    p.add_argument('--ref', help='ATO document ID or receipt number')
+    p.add_argument('--amount', help='amount payable or refundable')
+    p.add_argument('--by', help='who lodged it, e.g. your tax agent')
+    p.add_argument('--notes')
+    p.add_argument('--undo', action='store_true', help='remove the record')
+    p.set_defaults(func=cmd_lodged)
+
+    sub.add_parser('lodgements', help='what has been lodged so far').set_defaults(
+        func=cmd_lodgements)
 
     p = sub.add_parser('check', help='everything that needs attention right now')
     p.add_argument('--date', help='treat this as today')

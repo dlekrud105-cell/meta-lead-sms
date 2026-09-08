@@ -10,8 +10,8 @@ from decimal import Decimal
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from accounting import (accounts as coa, calendar_au as cal, config,  # noqa: E402
-                        contacts, jobs, ledger, periods, reports as rp,
-                        taxcodes, transactions as tx)
+                        contacts, jobs, ledger, lodgements, periods,
+                        reports as rp, taxcodes, transactions as tx)
 from accounting.money import ex_gst, gst_from_exclusive, gst_from_inclusive, money  # noqa: E402
 
 
@@ -36,6 +36,10 @@ class MoneyTests(unittest.TestCase):
 
     def test_gst_adds_to_an_exclusive_amount(self):
         self.assertEqual(gst_from_exclusive('1000'), Decimal('100.00'))
+
+    def test_negative_zero_never_escapes(self):
+        self.assertEqual(str(money(Decimal('0.00') * -1)), '0.00')
+        self.assertEqual(str(money('-0.001')), '0.00')
 
     def test_rounding_is_half_up_not_bankers(self):
         self.assertEqual(money('0.125'), Decimal('0.13'))
@@ -185,9 +189,13 @@ class PayrollTests(BooksTestCase):
         self.assertEqual(ledger.balance('2300'), Decimal('0.00'))
 
 
-class BasTests(BooksTestCase):
+class BasAccrualTests(BooksTestCase):
+    """Accruals basis: GST is reported when the invoice or bill is dated."""
+
     def setUp(self):
         super().setUp()
+        self.company.gst_basis = 'accruals'
+        self.company.save()
         contacts.add('Jane Smith', contacts.CUSTOMER)
         contacts.add('Kim Painting', contacts.SUBCONTRACTOR, abn='26008672179',
                      gst_registered=True)
@@ -202,6 +210,7 @@ class BasTests(BooksTestCase):
 
     def test_bas_labels(self):
         report = rp.bas('2026-01-01', '2026-03-31')
+        self.assertEqual(report.basis, 'accruals')
         self.assertEqual(report.g1, Decimal('8800.00'))
         self.assertEqual(report.gst_on_sales, Decimal('800.00'))
         # 2200 bill + 550 paint + 63 ASIC = 2813 non-capital
@@ -247,6 +256,133 @@ class BasTests(BooksTestCase):
         report = rp.bas('2026-01-01', '2026-03-31')
         self.assertTrue(report.checks)
         self.assertIn('1A', report.checks[0])
+
+
+class BasCashTests(BooksTestCase):
+    """Cash basis: GST is reported when the money actually moves.
+
+    This is the method on YOUR PAINTER SERVICE PTY LTD's activity statement,
+    so it is the default.
+    """
+
+    def setUp(self):
+        super().setUp()
+        contacts.add('Jane Smith', contacts.CUSTOMER)
+        contacts.add('Kim Painting', contacts.SUBCONTRACTOR, abn='26008672179',
+                     gst_registered=True)
+        self.invoice = tx.create_invoice('2026-02-03', 'Jane Smith',
+                                         ['4000:8000:Repaint'])
+        self.bill = tx.create_bill('2026-03-05', 'Kim Painting', ['5000:2000:Labour'])
+
+    def test_cash_is_the_default_basis(self):
+        self.assertEqual(rp.bas('2026-01-01', '2026-03-31').basis, 'cash')
+
+    def test_an_unpaid_invoice_is_not_on_the_bas(self):
+        report = rp.bas('2026-01-01', '2026-03-31')
+        self.assertEqual(report.g1, Decimal('0.00'))
+        self.assertEqual(report.gst_on_sales, Decimal('0.00'))
+
+    def test_gst_lands_in_the_quarter_the_money_moves(self):
+        tx.record_receipt('2026-04-10', self.invoice['doc_id'])
+        tx.pay_bill('2026-04-15', self.bill['doc_id'])
+        third = rp.bas('2026-01-01', '2026-03-31')
+        fourth = rp.bas('2026-04-01', '2026-06-30')
+        self.assertEqual(third.net_amount, Decimal('0.00'))
+        self.assertEqual(fourth.g1, Decimal('8800.00'))
+        self.assertEqual(fourth.gst_on_sales, Decimal('800.00'))
+        self.assertEqual(fourth.gst_on_purchases, Decimal('200.00'))
+
+    def test_a_part_payment_reports_only_that_part(self):
+        tx.record_receipt('2026-03-20', self.invoice['doc_id'], '4400.00')
+        report = rp.bas('2026-01-01', '2026-03-31')
+        self.assertEqual(report.g1, Decimal('4400.00'))
+        self.assertEqual(report.gst_on_sales, Decimal('400.00'))
+
+    def test_a_part_payment_splits_across_tax_codes(self):
+        # Half GST-taxable, half GST-free; paying half must report half of each.
+        contacts.add('Mixed Co', contacts.CUSTOMER)
+        mixed = tx.create_invoice('2026-02-10', 'Mixed Co',
+                                  ['4000:1000:Painting:GST', '4100:1000:Grant:FRE'])
+        self.assertEqual(mixed['total_incl'], Decimal('2100.00'))
+        tx.record_receipt('2026-02-20', mixed['doc_id'], '1050.00')
+        report = rp.bas('2026-01-01', '2026-03-31')
+        self.assertEqual(report.gst_on_sales, Decimal('50.00'))
+        self.assertEqual(report.g3, Decimal('500.00'))
+
+    def test_cash_and_accruals_agree_once_everything_is_settled(self):
+        tx.record_receipt('2026-04-10', self.invoice['doc_id'])
+        tx.pay_bill('2026-04-15', self.bill['doc_id'])
+        window = ('2026-01-01', '2026-06-30')
+        cash = rp.bas(*window, basis='cash')
+        accruals = rp.bas(*window, basis='accruals')
+        self.assertEqual(cash.g1, accruals.g1)
+        self.assertEqual(cash.gst_on_sales, accruals.gst_on_sales)
+        self.assertEqual(cash.gst_on_purchases, accruals.gst_on_purchases)
+        self.assertEqual(cash.net_amount, accruals.net_amount)
+
+    def test_deferred_gst_shows_what_is_not_reportable_yet(self):
+        report = rp.bas('2026-01-01', '2026-03-31')
+        self.assertEqual(report.deferred_gst_sales, Decimal('800.00'))
+        self.assertEqual(report.deferred_gst_purchases, Decimal('200.00'))
+
+    def test_deferred_gst_is_measured_as_at_the_period_end(self):
+        # Paid after the quarter closed, so at 31 March it was still deferred.
+        tx.record_receipt('2026-04-10', self.invoice['doc_id'])
+        report = rp.bas('2026-01-01', '2026-03-31')
+        self.assertEqual(report.deferred_gst_sales, Decimal('800.00'))
+
+    def test_an_unknown_basis_is_rejected(self):
+        with self.assertRaises(ValueError):
+            rp.bas('2026-01-01', '2026-03-31', basis='hybrid')
+
+
+class TaxAgentDateTests(BooksTestCase):
+    def test_agent_concession_dates(self):
+        expected = {1: date(2025, 11, 25), 2: date(2026, 2, 28),
+                    3: date(2026, 5, 26), 4: date(2026, 8, 25)}
+        for number, due in expected.items():
+            self.assertEqual(periods.quarter(2026, number).bas_due_agent, due,
+                             f'Q{number} FY2026')
+
+    def test_bas_uses_the_agent_date_when_one_is_engaged(self):
+        self.company.uses_tax_agent = True
+        self.company.tax_agent = 'Woori Accounting'
+        self.company.save()
+        self.assertEqual(rp.bas('2026-04-01', '2026-06-30').due, date(2026, 8, 25))
+
+    def test_bas_uses_the_self_lodgement_date_otherwise(self):
+        self.assertEqual(rp.bas('2026-04-01', '2026-06-30').due, date(2026, 7, 28))
+
+
+class PayDaySuperTests(BooksTestCase):
+    def test_quarterly_rules_apply_before_1_july_2026(self):
+        tx.pay_wages('2026-05-15', 'd1', '2000', '400')
+        obligation = rp.super_obligations('2026-06-30')[0]
+        self.assertEqual(obligation.due, date(2026, 7, 28))
+
+    def test_super_is_due_seven_days_after_a_pay_day_from_1_july_2026(self):
+        tx.pay_wages('2026-07-20', 'd1', '2000', '400')
+        obligation = rp.super_obligations('2026-07-31')[0]
+        self.assertEqual(obligation.due, date(2026, 7, 27))
+
+    def test_unpaid_super_past_its_due_date_is_flagged(self):
+        tx.pay_wages('2026-07-20', 'd1', '2000', '400')
+        self.assertEqual(len(rp.late_super('2026-07-26')), 0)
+        self.assertEqual(len(rp.late_super('2026-08-01')), 1)
+
+    def test_payments_clear_the_oldest_pay_run_first(self):
+        tx.pay_wages('2026-07-20', 'd1', '2000', '400')
+        tx.pay_wages('2026-08-20', 'd1', '2000', '400')
+        tx.pay_super('2026-07-25', '240')
+        obligations = rp.super_obligations('2026-09-07')
+        self.assertEqual(obligations[0].outstanding, Decimal('0.00'))
+        self.assertEqual(obligations[1].outstanding, Decimal('240.00'))
+
+    def test_calendar_stops_issuing_quarterly_super_after_the_changeover(self):
+        items = [o for o in cal.obligations(self.company) if o.kind == cal.SUPER]
+        quarterly = [o for o in items if o.label.startswith('Pay superannuation')]
+        self.assertTrue(all(o.due <= date(2026, 7, 28) for o in quarterly))
+        self.assertTrue(any('Pay Day Super' in o.label for o in items))
 
 
 class TparTests(BooksTestCase):
@@ -369,6 +505,16 @@ class AgedAndJobTests(BooksTestCase):
         contacts.add('Kim Painting', contacts.SUBCONTRACTOR, abn='26008672179')
         self.job = jobs.add('12 Smith St interior', quoted_incl='8800')
 
+    def test_outstanding_is_measured_as_at_the_date_asked_for(self):
+        invoice = tx.create_invoice('2026-02-03', 'Jane Smith', ['4000:8000'])
+        tx.record_receipt('2026-07-10', invoice['doc_id'])
+        self.assertEqual(tx.document_balance(invoice['doc_id'], '2026-06-30'),
+                         Decimal('8800.00'))
+        self.assertEqual(tx.document_balance(invoice['doc_id']), Decimal('0.00'))
+        self.assertEqual(rp.aged_receivables('2026-06-30').total,
+                         Decimal('8800.00'))
+        self.assertEqual(rp.aged_receivables('2026-07-31').total, Decimal('0.00'))
+
     def test_aged_receivables_bucket_by_due_date(self):
         tx.create_invoice('2026-02-03', 'Jane Smith', ['4000:8000'], due_days=14)
         aged = rp.aged_receivables('2026-06-30')
@@ -424,6 +570,52 @@ class CalendarTests(BooksTestCase):
     def test_nothing_is_dated_before_registration(self):
         for obligation in cal.obligations(self.company):
             self.assertGreaterEqual(obligation.due, date(2026, 1, 15))
+
+
+class LodgementTests(BooksTestCase):
+    def test_a_recorded_lodgement_stops_showing_as_overdue(self):
+        self.assertTrue(any(o.kind == cal.BAS and o.period == 'Q3 FY2026'
+                            for o in cal.overdue('2026-09-08', self.company)))
+        lodgements.record('BAS', 'Q3 FY2026', '2026-05-30', reference='59741490849',
+                          amount='68', lodged_by='Woori Accounting Services')
+        self.assertFalse(any(o.kind == cal.BAS and o.period == 'Q3 FY2026'
+                             for o in cal.overdue('2026-09-08', self.company)))
+
+    def test_lodging_the_same_period_twice_is_refused(self):
+        lodgements.record('BAS', 'Q3 FY2026', '2026-05-30')
+        with self.assertRaises(KeyError):
+            lodgements.record('bas', 'q3 fy2026', '2026-06-01')
+
+    def test_a_lodgement_can_be_undone(self):
+        lodgements.record('TPAR', 'FY2026', '2026-08-20')
+        self.assertTrue(lodgements.remove('TPAR', 'FY2026'))
+        self.assertFalse(lodgements.remove('TPAR', 'FY2026'))
+
+    def test_other_periods_are_untouched(self):
+        lodgements.record('BAS', 'Q3 FY2026', '2026-05-30')
+        periods_left = {o.period for o in cal.overdue('2026-09-08', self.company)
+                        if o.kind == cal.BAS}
+        self.assertIn('Q4 FY2026', periods_left)
+
+
+class NoWagesTests(BooksTestCase):
+    """A company whose directors take nothing as wages has no super or STP."""
+
+    def test_no_super_or_stp_deadlines_without_wages(self):
+        kinds = {o.kind for o in cal.overdue('2026-09-08', self.company)}
+        self.assertNotIn(cal.SUPER, kinds)
+        self.assertNotIn(cal.STP, kinds)
+
+    def test_paying_a_wage_brings_the_deadlines_back(self):
+        tx.pay_wages('2026-02-15', 'd1', '2000', '400')
+        overdue = cal.overdue('2026-09-08', self.company)
+        self.assertTrue(any(o.kind == cal.SUPER and o.period == 'Q3 FY2026'
+                            for o in overdue))
+        self.assertTrue(any(o.kind == cal.STP for o in overdue))
+
+    def test_the_pay_day_super_notice_is_never_overdue(self):
+        for obligation in cal.overdue('2027-06-30', self.company):
+            self.assertFalse(obligation.informational)
 
 
 if __name__ == '__main__':

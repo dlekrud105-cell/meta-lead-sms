@@ -105,11 +105,15 @@ JOBS = Table('jobs.csv', [
     'started', 'completed', 'notes',
 ])
 
+LODGEMENTS = Table('lodgements.csv', [
+    'kind', 'period', 'lodged_date', 'reference', 'amount', 'lodged_by', 'notes',
+])
+
 ACCOUNTS_EXPORT = Table('accounts.csv', [
     'code', 'name', 'type', 'tax_code', 'normal_side', 'tpar', 'deductible', 'note',
 ])
 
-TABLES = [JOURNAL, CONTACTS, DOCUMENTS, JOBS, ACCOUNTS_EXPORT]
+TABLES = [JOURNAL, CONTACTS, DOCUMENTS, JOBS, LODGEMENTS, ACCOUNTS_EXPORT]
 
 
 def company_file() -> Path:

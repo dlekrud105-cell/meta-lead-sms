@@ -114,11 +114,15 @@ def _document(doc_id: str) -> dict:
     return row
 
 
-def document_balance(doc_id: str) -> Decimal:
-    """Amount still outstanding on an invoice or bill."""
+def document_balance(doc_id: str, as_at=None) -> Decimal:
+    """Amount still outstanding on an invoice or bill.
+
+    `as_at` gives the balance as it stood on that date, ignoring payments made
+    later. Without it you get the position today.
+    """
     doc = _document(doc_id)
     control = _role('ar') if doc['type'] == INVOICE else _role('ap')
-    selected = ledger.lines(account=control, doc_ref=doc_id)
+    selected = ledger.lines(account=control, doc_ref=doc_id, end=as_at)
     net = money(sum((l.signed for l in selected), ZERO))
     return money(net * coa.get(control).sign)
 
@@ -131,7 +135,7 @@ def open_documents(doc_type: str, as_at=None) -> list:
             continue
         if as_at and parse_date(row['date']) > parse_date(as_at):
             continue
-        remaining = document_balance(row['doc_id'])
+        remaining = document_balance(row['doc_id'], as_at)
         if remaining != ZERO:
             out.append((row, remaining))
     return out
